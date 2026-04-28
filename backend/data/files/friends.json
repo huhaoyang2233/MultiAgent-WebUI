@@ -1,0 +1,75 @@
+{
+  "user-1": [
+    {
+      "id": "friend-1",
+      "name": "市场观察员",
+      "avatar": "📊",
+      "type": "ai",
+      "role_id": "role-1",
+      "status": "online",
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "friend-2",
+      "name": "趋势分析师",
+      "avatar": "📈",
+      "type": "ai",
+      "role_id": "role-2",
+      "status": "online",
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "friend-3",
+      "name": "技术分析师",
+      "avatar": "💻",
+      "type": "ai",
+      "role_id": "role-3",
+      "status": "online",
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "friend-4",
+      "name": "张三",
+      "avatar": "👤",
+      "type": "user",
+      "status": "online",
+      "created_at": "2024-01-02T00:00:00Z"
+    },
+    {
+      "id": "friend-5",
+      "name": "李四",
+      "avatar": "👤",
+      "type": "user",
+      "status": "offline",
+      "created_at": "2024-01-03T00:00:00Z"
+    }
+  ],
+  "user-2": [
+    {
+      "id": "friend-6",
+      "name": "市场观察员",
+      "avatar": "📊",
+      "type": "ai",
+      "role_id": "role-1",
+      "status": "online",
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "friend-7",
+      "name": "趋势分析师",
+      "avatar": "📈",
+      "type": "ai",
+      "role_id": "role-2",
+      "status": "online",
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "friend-8",
+      "name": "王五",
+      "avatar": "👤",
+      "type": "user",
+      "status": "online",
+      "created_at": "2024-01-04T00:00:00Z"
+    }
+  ]
+}

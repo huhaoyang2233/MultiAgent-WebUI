@@ -1,57 +1,139 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getChatHistory } from '../services/chatApi'  //加载历史记录
+import { getChatHistory, getAiRoles, getFriends, getGroups, getCustomAgents } from '../services/chatApi'
 
 export const useChatStore = defineStore('chat', () => {
-  // 状态
   const chatHistory = ref([])
   const currentChatId = ref(null)
-  const messages = ref({}) // 存储每个聊天的消息
-  const mentionMode = ref(false) // @模式状态
-  const mentionedRole = ref(null) // 被@的角色
+  const messages = ref({})
+  const mentionMode = ref(false)
+  const mentionedRole = ref(null)
   
-  // AI角色配置
-  const aiRoles = ref([
-    {
-      id: 'MarketScount',
-      name: '市场观察员',
-      avatar: '💻',
-      color: '#409EFF',
-      description: '擅长大盘及板块分析，掌握资金流向、行业热度及分化情况，能够发现潜在龙头股。主要负责整体市场板块观察，为个股和板块提供趋势参考。'
-    },
-    {
-      id: 'TrendSeer',
-      name: '趋势与短期预测分析师',
-      avatar: '📊',
-      color: '#67C23A',
-      description: '擅长对指定的股票专注长短期的趋势分析与股票预测，擅长识别金叉/死叉、极值点和趋势延续/反转信号。能量化支撑位、压力位及潜在价格区间，为操作提供参考。'
-    },
-    {
-      id: 'PatternMaster',
-      name: '技术形态与波动分析师',
-      avatar: '🤖',
-      color: '#E6A23C',
-      description: '擅长对指定的股票做K线形态识别与波动分析，能够判断头肩顶、W底、M顶等典型技术形态，结合RSI、MACD、布林带等指标分析市场波动。主要负责发现形态信号、预测潜在反转和支撑压力区域。'
-    }
-  ])
+  const aiRoles = ref([])
+  const friends = ref([])
+  const groups = ref([])
+  const customAgents = ref([])
+  
+  const currentGroupId = ref(null)
+  const groupMessages = ref({})
+  const currentSelectedFriendId = ref(null)
+  const friendMessages = ref({})
+  const currentTab = ref('friends')
+  const currentView = ref('chat')
+  const isEnglish = ref(false)
+  const isDataLoaded = ref(false)
+
   const getAiRole = (roleId) => {
-    return aiRoles.find(r => r.id === roleId) || null
+    return aiRoles.value.find(r => r.id === roleId) || null
   }
 
-   // 初始化用户聊天记录
+  const initData = async () => {
+    if (isDataLoaded.value) return
+    
+    try {
+      const [roles, friendsData, groupsData, agents] = await Promise.all([
+        getAiRoles(),
+        getFriends(),
+        getGroups(),
+        getCustomAgents()
+      ])
+      
+      aiRoles.value = roles.map(r => ({
+        id: r.id,
+        name: r.name,
+        avatar: r.avatar,
+        color: r.color || '#409EFF',
+        description: r.description,
+        ability: r.ability,
+        personality: r.personality
+      }))
+      
+      friends.value = friendsData.map(f => ({
+        id: f.id,
+        name: f.name,
+        avatar: f.avatar,
+        status: f.status,
+        type: f.type,
+        roleId: f.role_id
+      }))
+      
+      groups.value = groupsData.map(g => ({
+        id: g.id,
+        name: g.name,
+        avatar: g.avatar,
+        members: g.members || [],
+        memberCount: g.member_count || g.memberCount,
+        lastMessage: g.last_message || '',
+        lastTime: g.last_time || '',
+        unread: g.unread || 0
+      }))
+      
+      customAgents.value = agents.map(a => ({
+        id: a.id,
+        name: a.name,
+        avatar: a.avatar,
+        ability: a.ability,
+        personality: a.personality,
+        description: a.description,
+        subscribed: a.subscribed,
+        createdAt: a.created_at
+      }))
+      
+      isDataLoaded.value = true
+    } catch (err) {
+      console.error('初始化数据失败:', err)
+    }
+  }
+
+  const addCustomAgent = (agent) => {
+    const newAgent = {
+      id: Date.now().toString(),
+      ...agent,
+      subscribed: false,
+      createdAt: new Date().toISOString().split('T')[0]
+    }
+    customAgents.value.push(newAgent)
+    return newAgent
+  }
+
+  const toggleSubscribeAgent = (agentId) => {
+    const agent = customAgents.value.find(a => a.id === agentId)
+    if (agent) {
+      agent.subscribed = !agent.subscribed
+      if (agent.subscribed) {
+        friends.value.push({
+          id: `agent_${agentId}`,
+          name: agent.name,
+          avatar: agent.avatar,
+          status: 'online',
+          type: 'ai',
+          roleId: agentId
+        })
+      } else {
+        const index = friends.value.findIndex(f => f.id === `agent_${agentId}`)
+        if (index !== -1) {
+          friends.value.splice(index, 1)
+        }
+      }
+    }
+  }
+
+  const setCurrentView = (view) => {
+    currentView.value = view
+  }
+
   const initUserChats = async () => {
     try {
-      const data = await getChatHistory() // 调用后端接口
+      const data = await getChatHistory()
       const chatRecords = data.chat_history || []
       console.log('获取聊天记录:', chatRecords)
 
-      // 按 chat_id 分组
       const grouped = {}
       chatRecords.forEach(record => {
         const chatId = record.chat_id
         if (!grouped[chatId]) grouped[chatId] = []
         grouped[chatId].push({
-          id: Date.now() + Math.random(),       // 每条消息唯一 id
+          id: Date.now() + Math.random(),
           role: record.role == "Chat_User"? "user":record.role,
           content: record.content,
           timestamp: record.timestamp,
@@ -59,7 +141,6 @@ export const useChatStore = defineStore('chat', () => {
         })
       })
 
-      // 构建 chatHistory 和 messages
       chatHistory.value = []
       messages.value = {}
       Object.keys(grouped).forEach(chatId => {
@@ -75,7 +156,6 @@ export const useChatStore = defineStore('chat', () => {
       })
       console.log('最终 messages:', messages.value)
 
-      // 默认选中第一个会话
       currentChatId.value = chatHistory.value.length > 0 ? chatHistory.value[0].id : null
 
     } catch (err) {
@@ -86,19 +166,15 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
   
-  //返回消息列表
   const currentMessages = computed(() => {
     return currentChatId.value ? messages.value[currentChatId.value] || [] : []
   })
   
-  //消息元数据
   const currentChat = computed(() => {
     return chatHistory.value.find(chat => chat.id === currentChatId.value)
   })
   
-  // 创建一个新会话
   const createNewChat = () => {
-    //会话id
     const newChat = {
       id: Date.now().toString(),
       title: '新对话',
@@ -125,13 +201,11 @@ export const useChatStore = defineStore('chat', () => {
     chatMessages.push(message)
     messages.value[currentChatId.value] = chatMessages
     
-    // 更新聊天记录信息
     const chat = chatHistory.value.find(c => c.id === currentChatId.value)
     if (chat) {
       chat.messageCount = chatMessages.length
       chat.updatedAt = new Date()
       
-      // 如果是第一条用户消息，更新标题
       if (message.role === 'user' && chat.title === '新对话') {
         chat.title = message.content.length > 20 
           ? message.content.substring(0, 20) + '...' 
@@ -184,7 +258,6 @@ export const useChatStore = defineStore('chat', () => {
       chatHistory.value.splice(index, 1)
       delete messages.value[chatId]
       
-      // 如果删除的是当前聊天，选择第一个聊天
       if (currentChatId.value === chatId) {
         currentChatId.value = chatHistory.value.length > 0 ? chatHistory.value[0].id : null
       }
@@ -197,7 +270,6 @@ export const useChatStore = defineStore('chat', () => {
     currentChatId.value = null
   }
   
-  // @功能相关方法
   const startMention = (role) => {
     mentionMode.value = true
     mentionedRole.value = role
@@ -212,23 +284,100 @@ export const useChatStore = defineStore('chat', () => {
     if (!role) return text
     return `@${role.name} ${text}`
   }
+
+  const selectFriend = (friendId) => {
+    currentSelectedFriendId.value = friendId
+    currentGroupId.value = null
+    if (!friendMessages.value[friendId]) {
+      friendMessages.value[friendId] = []
+    }
+  }
+
+  const selectGroup = (groupId) => {
+    currentGroupId.value = groupId
+    currentSelectedFriendId.value = null
+    if (!groupMessages.value[groupId]) {
+      groupMessages.value[groupId] = []
+    }
+  }
+
+  const addFriendMessage = (friendId, message) => {
+    if (!friendMessages.value[friendId]) {
+      friendMessages.value[friendId] = []
+    }
+    friendMessages.value[friendId].push(message)
+  }
+
+  const addGroupMessage = (groupId, message) => {
+    if (!groupMessages.value[groupId]) {
+      groupMessages.value[groupId] = []
+    }
+    groupMessages.value[groupId].push(message)
+  }
+
+  const clearFriendMessages = (friendId) => {
+    if (friendMessages.value[friendId]) {
+      friendMessages.value[friendId] = []
+    }
+  }
+
+  const clearGroupMessages = (groupId) => {
+    if (groupMessages.value[groupId]) {
+      groupMessages.value[groupId] = []
+    }
+    const group = groups.value.find(g => g.id === groupId)
+    if (group) {
+      group.unread = 0
+    }
+  }
+
+  const setCurrentTab = (tab) => {
+    currentTab.value = tab
+  }
+
+  const currentFriend = computed(() => {
+    return friends.value.find(f => f.id === currentSelectedFriendId.value)
+  })
+
+  const currentGroup = computed(() => {
+    return groups.value.find(g => g.id === currentGroupId.value)
+  })
+
+  const currentFriendMessages = computed(() => {
+    return currentSelectedFriendId.value ? friendMessages.value[currentSelectedFriendId.value] || [] : []
+  })
+
+  const currentGroupMessages = computed(() => {
+    return currentGroupId.value ? groupMessages.value[currentGroupId.value] || [] : []
+  })
   
   return {
-    // 状态
     chatHistory,
     currentChatId,
     messages,
     aiRoles,
     mentionMode,
     mentionedRole,
-    
-    // 计算属性
+    friends,
+    groups,
+    currentGroupId,
+    groupMessages,
+    currentSelectedFriendId,
+    friendMessages,
+    currentTab,
+    currentView,
+    customAgents,
+    isEnglish,
+    isDataLoaded,
+    getAiRole,
+    addCustomAgent,
+    toggleSubscribeAgent,
+    setCurrentView,
+    initData,
+    initUserChats,
     currentMessages,
     currentChat,
-    
-    // 方法
     createNewChat,
-    getAiRole,
     selectChat,
     addMessage,
     updateStreamingMessage,
@@ -239,6 +388,16 @@ export const useChatStore = defineStore('chat', () => {
     startMention,
     cancelMention,
     formatMentionText,
-    initUserChats
+    selectFriend,
+    selectGroup,
+    addFriendMessage,
+    addGroupMessage,
+    clearFriendMessages,
+    clearGroupMessages,
+    setCurrentTab,
+    currentFriend,
+    currentGroup,
+    currentFriendMessages,
+    currentGroupMessages
   }
 })

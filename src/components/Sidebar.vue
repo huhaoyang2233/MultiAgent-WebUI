@@ -104,7 +104,7 @@ const props = defineProps({
   chatHistory: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['toggle', 'new-chat', 'select-chat', 'open-login'])
+const emit = defineEmits(['toggle', 'new-chat', 'select-chat'])
 
 const chatStore = useChatStore()
 
@@ -154,7 +154,7 @@ const handleCommand = (command) => {
         localStorage.removeItem('userInfo')
         chatStore.clearAllChats()
         ElMessage.success('已注销账户，请重新登录')
-        emit('open-login')
+        window.location.href = '/login'
       }).catch(() => {})
       break
   }
@@ -172,10 +172,7 @@ const formatTime = (date) => {
   return chatDate.toLocaleDateString()
 }
 
-// 打开登录弹窗
-const openLogin = () => {
-  emit('open-login')
-}
+
 </script>
 
 

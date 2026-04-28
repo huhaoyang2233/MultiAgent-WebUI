@@ -1,0 +1,14 @@
+{
+  "custom_agents": [
+    {
+      "id": "agent-812631d3",
+      "name": "胡浩扬",
+      "avatar": "💻",
+      "ability": "test",
+      "personality": "test",
+      "description": "test",
+      "subscribed": true,
+      "created_at": "2026-04-28T11:13:47.262981Z"
+    }
+  ]
+}

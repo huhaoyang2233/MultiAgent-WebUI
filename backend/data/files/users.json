@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "id": "user-1",
+      "username": "admin",
+      "password": "admin123",
+      "email": "admin@example.com",
+      "avatar": "https://i.pravatar.cc/40?img=1",
+      "role": "admin",
+      "created_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "user-2",
+      "username": "user",
+      "password": "user123",
+      "email": "user@example.com",
+      "avatar": "https://i.pravatar.cc/40?img=2",
+      "role": "user",
+      "created_at": "2024-01-02T00:00:00Z"
+    }
+  ]
+}
