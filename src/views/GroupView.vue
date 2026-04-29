@@ -403,7 +403,7 @@ import { storeToRefs } from 'pinia'
 import { useChatStore } from '../stores/chatStore'
 import Header from '../components/Header.vue'
 import AgentManager from '../components/AgentManager.vue'
-import { chatWithAgent, chatWithFriend, chatInGroup, checkOrCreateSession, createGroup, getUserSessions } from '../services/chatApi'
+import { chatWithAgent, chatWithFriend, chatInGroup, checkOrCreateSession, createGroup, getUserSessions, getChatHistory } from '../services/chatApi'
 
 const chatStore = useChatStore()
 
@@ -487,7 +487,7 @@ const handleCreateGroup = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   const userInfoStr = localStorage.getItem('userInfo')
   if (userInfoStr) {
     userInfo.value = JSON.parse(userInfoStr)
@@ -496,7 +496,8 @@ onMounted(() => {
   const lang = localStorage.getItem('language')
   isEnglish.value = lang === 'en'
   
-  loadSessions()
+  await chatStore.initData()
+  await loadSessions()
 })
 
 const aiFriends = computed(() => {
@@ -665,11 +666,48 @@ const isSessionActive = (session) => {
   return false
 }
 
-const selectSession = (session) => {
-  if (session.chat_type === 'agent' || session.chat_type === 'friend') {
-    chatStore.selectFriend(session.target_id)
-  } else if (session.chat_type === 'group') {
-    chatStore.selectGroup(session.target_id)
+const selectSession = async (session) => {
+  try {
+    const history = await getChatHistory(session.chat_type, session.target_id)
+    
+    if (session.chat_type === 'agent' || session.chat_type === 'friend') {
+      chatStore.selectFriend(session.target_id)
+      if (history.messages && history.messages.length > 0) {
+        const mappedMessages = history.messages.map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          name: msg.name,
+          content: msg.content,
+          timestamp: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : ''
+        }))
+        chatStore.setFriendMessages(session.target_id, mappedMessages)
+      } else {
+        chatStore.setFriendMessages(session.target_id, [])
+      }
+    } else if (session.chat_type === 'group') {
+      chatStore.selectGroup(session.target_id)
+      if (history.messages && history.messages.length > 0) {
+        const mappedMessages = history.messages.map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          name: msg.name,
+          content: msg.content,
+          timestamp: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : ''
+        }))
+        chatStore.setGroupMessages(session.target_id, mappedMessages)
+      } else {
+        chatStore.setGroupMessages(session.target_id, [])
+      }
+    }
+  } catch (error) {
+    console.error('加载会话历史失败:', error)
+    if (session.chat_type === 'agent' || session.chat_type === 'friend') {
+      chatStore.selectFriend(session.target_id)
+      chatStore.setFriendMessages(session.target_id, [])
+    } else if (session.chat_type === 'group') {
+      chatStore.selectGroup(session.target_id)
+      chatStore.setGroupMessages(session.target_id, [])
+    }
   }
 }
 

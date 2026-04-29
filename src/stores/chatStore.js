@@ -289,7 +289,10 @@ export const useChatStore = defineStore('chat', () => {
     currentSelectedFriendId.value = friendId
     currentGroupId.value = null
     if (!friendMessages.value[friendId]) {
-      friendMessages.value[friendId] = []
+      friendMessages.value = {
+        ...friendMessages.value,
+        [friendId]: []
+      }
     }
   }
 
@@ -297,22 +300,41 @@ export const useChatStore = defineStore('chat', () => {
     currentGroupId.value = groupId
     currentSelectedFriendId.value = null
     if (!groupMessages.value[groupId]) {
-      groupMessages.value[groupId] = []
+      groupMessages.value = {
+        ...groupMessages.value,
+        [groupId]: []
+      }
     }
   }
 
   const addFriendMessage = (friendId, message) => {
-    if (!friendMessages.value[friendId]) {
-      friendMessages.value[friendId] = []
+    const current = friendMessages.value[friendId] || []
+    friendMessages.value = {
+      ...friendMessages.value,
+      [friendId]: [...current, message]
     }
-    friendMessages.value[friendId].push(message)
+  }
+
+  const setFriendMessages = (friendId, messages) => {
+    friendMessages.value = {
+      ...friendMessages.value,
+      [friendId]: messages
+    }
   }
 
   const addGroupMessage = (groupId, message) => {
-    if (!groupMessages.value[groupId]) {
-      groupMessages.value[groupId] = []
+    const current = groupMessages.value[groupId] || []
+    groupMessages.value = {
+      ...groupMessages.value,
+      [groupId]: [...current, message]
     }
-    groupMessages.value[groupId].push(message)
+  }
+
+  const setGroupMessages = (groupId, messages) => {
+    groupMessages.value = {
+      ...groupMessages.value,
+      [groupId]: messages
+    }
   }
 
   const clearFriendMessages = (friendId) => {
@@ -391,7 +413,9 @@ export const useChatStore = defineStore('chat', () => {
     selectFriend,
     selectGroup,
     addFriendMessage,
+    setFriendMessages,
     addGroupMessage,
+    setGroupMessages,
     clearFriendMessages,
     clearGroupMessages,
     setCurrentTab,

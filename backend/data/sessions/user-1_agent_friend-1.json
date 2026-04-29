@@ -1,6 +1,35 @@
 {
   "session_id": "user-1_agent_friend-1",
-  "messages": [],
+  "messages": [
+    {
+      "id": "msg-8aa17514",
+      "role": "user",
+      "name": "admin",
+      "content": "你好",
+      "timestamp": "2026-04-29T01:46:15.240023Z"
+    },
+    {
+      "id": "msg-283dda74",
+      "role": "assistant",
+      "name": "AI助手",
+      "content": "从技术面来看，创业板 处于上升通道中，短期支撑位在均线附近，建议逢低布局。",
+      "timestamp": "2026-04-29T01:46:15.240790Z"
+    },
+    {
+      "id": "msg-ba71da18",
+      "role": "user",
+      "name": "admin",
+      "content": "在吗",
+      "timestamp": "2026-04-29T02:03:03.746234Z"
+    },
+    {
+      "id": "msg-34ab20d7",
+      "role": "assistant",
+      "name": "AI助手",
+      "content": "从技术面来看，上证指数 处于上升通道中，短期支撑位在均线附近，建议逢低布局。",
+      "timestamp": "2026-04-29T02:03:03.747051Z"
+    }
+  ],
   "created_at": "2026-04-28T11:42:33.002663Z",
-  "updated_at": "2026-04-28T11:42:33.002687Z"
+  "updated_at": "2026-04-29T02:03:03.747141Z"
 }
