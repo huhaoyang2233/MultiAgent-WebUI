@@ -101,7 +101,7 @@ async def delete_user(user_id: str, current_user: dict = Depends(get_current_use
     deleted_user = users.pop(index)
     users_db.set("users", users)
     
-    sessions_db = JSONDatabase("sessions.json")
+    sessions_db = JSONDatabase("sessions")
     sessions_db.delete(user_id)
     
     sessions_dir = os.path.join(os.path.dirname(__file__), "..", "data", "sessions")
@@ -117,7 +117,7 @@ async def get_all_sessions(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Permission denied")
     
-    sessions_db = JSONDatabase("sessions.json")
+    sessions_db = JSONDatabase("sessions")
     all_sessions = sessions_db.get_all()
     
     result = {}
@@ -164,7 +164,7 @@ async def delete_session(session_id: str, current_user: dict = Depends(get_curre
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Permission denied")
     
-    sessions_db = JSONDatabase("sessions.json")
+    sessions_db = JSONDatabase("sessions")
     all_sessions = sessions_db.get_all()
     
     user_id = None
@@ -212,12 +212,23 @@ async def get_user_groups(user_id: str, current_user: dict = Depends(get_current
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Permission denied")
     
-    all_groups = groups_db.get("groups", [])
+    user_friends = friends_db.get(user_id, [])
+    user_friend_ids = {friend["id"] for friend in user_friends}
+    
+    all_groups_data = groups_db.get_all()
     user_groups = []
     
-    for group in all_groups:
-        members = group.get("members", [])
-        if user_id in members:
-            user_groups.append(group)
+    for uid, groups in all_groups_data.items():
+        for group in groups:
+            members = group.get("members", [])
+            if uid == user_id or any(member in user_friend_ids for member in members):
+                user_groups.append(group)
     
-    return {"groups": user_groups}
+    unique_groups = []
+    seen_ids = set()
+    for group in user_groups:
+        if group["id"] not in seen_ids:
+            seen_ids.add(group["id"])
+            unique_groups.append(group)
+    
+    return {"groups": unique_groups}

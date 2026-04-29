@@ -27,6 +27,22 @@ async def get_chat_history(current_user: dict = Depends(get_current_user)):
     user_sessions = SessionDatabase.get_user_sessions(current_user["id"])
     return {"chat_history": user_sessions}
 
+@router.get("/session/{session_id}", summary="通过session_id获取聊天历史")
+async def get_session_history(session_id: str, current_user: dict = Depends(get_current_user)):
+    session_data = SessionDatabase.load_session(session_id)
+    
+    if not session_data or not session_data.get("messages"):
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    chat_data = {
+        "id": session_id,
+        "messages": session_data["messages"],
+        "created_at": session_data["created_at"],
+        "updated_at": session_data["updated_at"]
+    }
+    
+    return {"chat": chat_data}
+
 @router.get("/{target_id}/{target_type}", summary="获取指定聊天记录")
 async def get_chat(target_id: str, target_type: str, current_user: dict = Depends(get_current_user)):
     session_id = generate_session_id(current_user["id"], target_id, target_type)
@@ -95,18 +111,3 @@ async def list_sessions(current_user: dict = Depends(get_current_user)):
         session_list.append(session_info)
     return {"sessions": session_list}
 
-@router.get("/session/{session_id}", summary="通过session_id获取聊天历史")
-async def get_session_history(session_id: str, current_user: dict = Depends(get_current_user)):
-    session_data = SessionDatabase.load_session(session_id)
-    
-    if not session_data:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    chat_data = {
-        "id": session_id,
-        "messages": session_data["messages"],
-        "created_at": session_data["created_at"],
-        "updated_at": session_data["updated_at"]
-    }
-    
-    return {"chat": chat_data}

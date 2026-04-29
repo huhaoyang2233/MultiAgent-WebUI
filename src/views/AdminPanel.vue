@@ -434,7 +434,8 @@ import {
   getSessionHistory,
   updateCustomAgent,
   deleteCustomAgent,
-  createCustomAgent
+  createCustomAgent,
+  getCustomAgents
 } from '../services/chatApi';
 
 const router = useRouter();
@@ -799,8 +800,8 @@ const loadUsers = async () => {
 
 const loadAgents = async () => {
   try {
-    const agents = await chatStore.customAgents;
-    customAgents.value = agents;
+    const agents = await getCustomAgents();
+    customAgents.value = agents || [];
   } catch (error) {
     console.error('加载智能体列表失败:', error);
   }
