@@ -334,7 +334,8 @@
         </div>
       </main>
 
-      <aside v-if="currentView === 'chat'" class="info-panel">
+      <aside v-if="currentView === 'chat'" class="info-panel" :style="{ width: infoPanelWidth + 'px' }">
+        <div class="resize-handle" @mousedown="startResize"></div>
         <div v-if="currentSelectedFriendId" class="friend-info">
           <div class="info-header">
             <h3>{{ isEnglish ? 'Friend Info' : '好友信息' }}</h3>
@@ -350,8 +351,14 @@
               <p>{{ getAiRoleDesc(currentFriend?.roleId) }}</p>
             </div>
             <div class="info-actions">
-              <button class="info-btn primary">{{ isEnglish ? 'Send Message' : '发消息' }}</button>
-              <button class="info-btn">{{ isEnglish ? 'Remove Friend' : '删除好友' }}</button>
+              <button class="action-btn send-message-btn" @click="startChatWithFriend(currentFriend)">
+                <span class="btn-icon">💬</span>
+                <span class="btn-text">{{ isEnglish ? 'Send Message' : '发消息' }}</span>
+              </button>
+              <button class="action-btn delete-friend-btn" @click="confirmDeleteFriend(currentFriend)">
+                <span class="btn-icon">🗑️</span>
+                <span class="btn-text">{{ isEnglish ? 'Remove' : '删除' }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -377,9 +384,15 @@
               </div>
             </div>
 
-            <div class="info-actions">
-              <button class="info-btn">{{ isEnglish ? 'Invite Members' : '邀请成员' }}</button>
-              <button class="info-btn">{{ isEnglish ? 'Group Settings' : '群设置' }}</button>
+            <div class="group-info-actions">
+              <button class="action-btn invite-btn">
+                <span class="btn-icon">👥</span>
+                <span class="btn-text">{{ isEnglish ? 'Invite' : '邀请' }}</span>
+              </button>
+              <button class="action-btn settings-btn">
+                <span class="btn-icon">⚙️</span>
+                <span class="btn-text">{{ isEnglish ? 'Settings' : '设置' }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -455,7 +468,7 @@ import { storeToRefs } from 'pinia'
 import { useChatStore } from '../stores/chatStore'
 import Header from '../components/Header.vue'
 import AgentManager from '../components/AgentManager.vue'
-import { chatWithAgent, chatWithFriend, chatInGroup, checkOrCreateSession, createGroup, getUserSessions, getChatHistory } from '../services/chatApi'
+import { chatWithAgent, chatWithFriend, chatInGroup, checkOrCreateSession, createGroup, getUserSessions, getChatHistory, deleteFriend } from '../services/chatApi'
 
 const chatStore = useChatStore()
 
@@ -478,6 +491,7 @@ const inputMessage = ref('')
 const notifications = ref(true)
 const soundEnabled = ref(true)
 const userInfo = ref(null)
+const infoPanelWidth = ref(260)
 const isEnglish = ref(false)
 const contactsTab = ref('agents')
 const contactsSearchText = ref('')
@@ -543,6 +557,27 @@ const handleCreateGroup = async () => {
       ElMessage.error(isEnglish.value ? 'Failed to create group' : '创建群聊失败')
     }
   }
+}
+
+const startResize = (e) => {
+  e.preventDefault()
+  const startX = e.clientX
+  const startWidth = infoPanelWidth.value
+  
+  const onMouseMove = (e) => {
+    const deltaX = e.clientX - startX
+    let newWidth = startWidth - deltaX
+    newWidth = Math.max(200, Math.min(400, newWidth))
+    infoPanelWidth.value = newWidth
+  }
+  
+  const onMouseUp = () => {
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+  }
+  
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
 }
 
 onMounted(async () => {
@@ -612,6 +647,41 @@ const deleteConversation = (contact) => {
   }
 }
 
+const startChatWithFriend = (friend) => {
+  if (friend.type === 'ai') {
+    chatStore.selectFriend(friend.id)
+  } else {
+    chatStore.selectFriend(friend.id)
+  }
+  chatStore.setCurrentView('chat')
+}
+
+const confirmDeleteFriend = async (friend) => {
+  try {
+    if (typeof window !== 'undefined') {
+      const ElMessageBox = await import('element-plus').then(m => m.ElMessageBox)
+      const ElMessage = await import('element-plus').then(m => m.ElMessage)
+      await ElMessageBox.confirm(
+        isEnglish.value
+          ? `Are you sure you want to remove ${friend.name} from your friends?`
+          : `确定要删除好友 ${friend.name} 吗？`,
+        isEnglish.value ? 'Confirm Delete' : '确认删除',
+        {
+          confirmButtonText: isEnglish.value ? 'Delete' : '删除',
+          cancelButtonText: isEnglish.value ? 'Cancel' : '取消',
+          type: 'warning'
+        }
+      )
+      await deleteFriend(friend.id)
+      ElMessage.success(isEnglish.value ? 'Friend removed' : '已删除好友')
+      if (currentSelectedFriendId.value === friend.id) {
+        currentSelectedFriendId.value = null
+      }
+    }
+  } catch {
+  }
+}
+
 const handleContactClick = (friend) => {
   chatStore.selectFriend(friend.id)
   chatStore.setCurrentView('chat')
@@ -658,9 +728,13 @@ const filteredGroups = computed(() => {
 })
 
 const filteredSessions = computed(() => {
-  if (!searchText.value) return sessions.value
+  let result = [...sessions.value]
+  
+  result.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))
+  
+  if (!searchText.value) return result
   const keyword = searchText.value.toLowerCase()
-  return sessions.value.filter(session => {
+  return result.filter(session => {
     const name = getSessionName(session)
     return name.toLowerCase().includes(keyword)
   })
@@ -904,7 +978,7 @@ const sendMessage = async () => {
 }
 
 .nav-sidebar {
-  width: 64px;
+  width: 90px;
   background: linear-gradient(180deg, #1e3a8a 0%, #1d4ed8 100%);
   display: flex;
   flex-direction: column;
@@ -1922,10 +1996,47 @@ const sendMessage = async () => {
 }
 
 .info-panel {
-  width: 260px;
+  min-width: 200px;
+  max-width: 400px;
   background: white;
   border-left: 1px solid #e0e7ff;
   overflow-y: auto;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 10;
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+  background: #c0c4cc;
+}
+
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 40px;
+  background: #e0e7ff;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.resize-handle:hover::before {
+  opacity: 1;
 }
 
 .info-header {
@@ -1941,8 +2052,10 @@ const sendMessage = async () => {
 }
 
 .info-content {
-  padding: 20px;
+  padding: 16px;
   text-align: center;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .info-avatar {
@@ -1993,10 +2106,121 @@ const sendMessage = async () => {
   display: flex;
   gap: 8px;
   margin-top: 16px;
+  width: 100%;
+  padding: 0;
 }
 
-.info-btn {
+.info-actions .action-btn {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 8px;
+  border-radius: 8px;
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  max-width: calc(50% - 4px);
+  min-width: 0;
+  word-break: keep-all;
+}
+
+.info-actions .send-message-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+
+.info-actions .send-message-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+.info-actions .send-message-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+}
+
+.info-actions .delete-friend-btn {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+}
+
+.info-actions .delete-friend-btn:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+  transform: translateY(-1px);
+}
+
+.info-actions .delete-friend-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+}
+
+.info-actions .btn-icon {
+  font-size: 14px;
+}
+
+.info-actions .btn-text {
+  white-space: nowrap;
+}
+
+.group-info-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  width: 100%;
+  padding: 0;
+}
+
+.group-info-actions .action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 8px;
+  border-radius: 8px;
+  border: 1px solid #e0e7ff;
+  background: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  max-width: calc(50% - 4px);
+  min-width: 0;
+  word-break: keep-all;
+}
+
+.group-info-actions .invite-btn {
+  color: #3b82f6;
+}
+
+.group-info-actions .invite-btn:hover {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #3b82f6;
+}
+
+.group-info-actions .settings-btn {
+  color: #64748b;
+}
+
+.group-info-actions .settings-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.group-info-actions .btn-icon {
+  font-size: 14px;
+}
+
+.group-info-actions .btn-text {
+  white-space: nowrap;
 }
 
 .member-list {

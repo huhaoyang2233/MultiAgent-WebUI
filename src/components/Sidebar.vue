@@ -178,7 +178,7 @@ const formatTime = (date) => {
 
 <style scoped>
 .sidebar {
-  width: 280px;
+  width: 400px;
   height: 100vh;
   background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
   display: flex;
@@ -189,7 +189,7 @@ const formatTime = (date) => {
 }
 
 .sidebar.collapsed {
-  width: 60px;
+  width: 72px;
 }
 
 .sidebar-header {

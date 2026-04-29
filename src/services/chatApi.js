@@ -426,6 +426,22 @@ export const getFriends = async () => {
   }
 }
 
+export const deleteFriend = async (friendId) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/friends/${friendId}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return { success: true }
+  } catch (error) {
+    console.error('删除好友失败:', error)
+    return { success: false, message: error.message || '删除失败' }
+  }
+}
+
 export const getGroups = async () => {
   try {
     const response = await fetch(`${API_CONFIG.baseUrl}/groups`, {

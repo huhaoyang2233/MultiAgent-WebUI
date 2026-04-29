@@ -51,6 +51,19 @@
         "friend-4"
       ],
       "created_at": "2026-04-28T11:42:07.682321Z"
+    },
+    {
+      "id": "group-761f71af",
+      "name": "hi",
+      "avatar": "👥",
+      "member_count": 3,
+      "unread": 0,
+      "members": [
+        "friend-1",
+        "friend-2",
+        "friend-3"
+      ],
+      "created_at": "2026-04-29T06:40:36.269465Z"
     }
   ],
   "user-2": [
