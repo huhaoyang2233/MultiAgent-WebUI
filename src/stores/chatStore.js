@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getChatHistory, getAiRoles, getFriends, getGroups, getCustomAgents } from '../services/chatApi'
+import { getChatHistory, getAiRoles, getFriends, getGroups, getCustomAgents, toggleSubscribeAgent as toggleSubscribeAgentApi } from '../services/chatApi'
 
 export const useChatStore = defineStore('chat', () => {
   const chatHistory = ref([])
@@ -27,16 +27,22 @@ export const useChatStore = defineStore('chat', () => {
     return aiRoles.value.find(r => r.id === roleId) || null
   }
 
-  const initData = async () => {
-    if (isDataLoaded.value) return
+  const initData = async (force = false) => {
+    console.log('initData called, force:', force, 'isDataLoaded:', isDataLoaded.value)
+    if (!force && isDataLoaded.value) {
+      console.log('Data already loaded, returning')
+      return
+    }
     
     try {
+      console.log('Fetching data from backend...')
       const [roles, friendsData, groupsData, agents] = await Promise.all([
         getAiRoles(),
         getFriends(),
         getGroups(),
         getCustomAgents()
       ])
+      console.log('Data fetched successfully:', { roles: roles.length, friends: friendsData.length, groups: groupsData.length, agents: agents.length })
       
       aiRoles.value = roles.map(r => ({
         id: r.id,
@@ -96,25 +102,33 @@ export const useChatStore = defineStore('chat', () => {
     return newAgent
   }
 
-  const toggleSubscribeAgent = (agentId) => {
+  const toggleSubscribeAgent = async (agentId) => {
     const agent = customAgents.value.find(a => a.id === agentId)
-    if (agent) {
-      agent.subscribed = !agent.subscribed
-      if (agent.subscribed) {
-        friends.value.push({
-          id: `agent_${agentId}`,
-          name: agent.name,
-          avatar: agent.avatar,
-          status: 'online',
-          type: 'ai',
-          roleId: agentId
-        })
-      } else {
-        const index = friends.value.findIndex(f => f.id === `agent_${agentId}`)
-        if (index !== -1) {
-          friends.value.splice(index, 1)
+    if (!agent) return
+    
+    try {
+      const result = await toggleSubscribeAgentApi(agentId)
+      if (result.success) {
+        agent.subscribed = !agent.subscribed
+        if (agent.subscribed && result.data.friend_id) {
+          const newFriend = {
+            id: result.data.friend_id,
+            name: agent.name,
+            avatar: agent.avatar,
+            status: 'online',
+            type: 'ai',
+            roleId: agentId
+          }
+          friends.value = [...friends.value, newFriend]
+        } else if (!agent.subscribed) {
+          const index = friends.value.findIndex(f => f.roleId === agentId)
+          if (index !== -1) {
+            friends.value = friends.value.filter((_, i) => i !== index)
+          }
         }
       }
+    } catch (error) {
+      console.error('订阅操作失败:', error)
     }
   }
 

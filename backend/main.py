@@ -7,6 +7,7 @@ from routes.groups import router as groups_router
 from routes.custom_agents import router as custom_agents_router
 from routes.chat_history import router as chat_history_router
 from routes.chat import router as chat_router
+from routes.admin import router as admin_router
 from data.files.initial_data import init_data
 
 init_data()
@@ -32,6 +33,7 @@ app.include_router(groups_router)
 app.include_router(custom_agents_router)
 app.include_router(chat_history_router)
 app.include_router(chat_router)
+app.include_router(admin_router)
 
 @app.get("/", summary="健康检查")
 async def root():

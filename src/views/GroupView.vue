@@ -206,40 +206,85 @@
             
             <div class="contacts-right">
               <div v-if="selectedContact" class="contact-detail">
-                <div class="detail-avatar">{{ selectedContact.avatar }}</div>
-                <h2 class="detail-name">{{ selectedContact.name }}</h2>
-                <p class="detail-type">
-                  {{ selectedContact.type === 'ai' ? (isEnglish ? 'AI Assistant' : 'AI助手') : 
-                     selectedContact.type === 'group' ? (isEnglish ? 'Group Chat' : '群聊') : 
-                     (isEnglish ? 'User' : '用户') }}
-                </p>
-                
-                <div v-if="selectedContact.type === 'ai'" class="detail-desc">
-                  <h4>{{ isEnglish ? 'Description' : '描述' }}</h4>
-                  <p>{{ getAiRoleDesc(selectedContact.roleId) }}</p>
-                </div>
-                
-                <div v-if="selectedContact.type === 'group'" class="detail-members">
-                  <h4>{{ isEnglish ? 'Members' : '成员' }}</h4>
-                  <div class="members-list">
-                    <div 
-                      v-for="(memberId, index) in selectedContact.members" 
-                      :key="index"
-                      class="member-item"
-                    >
-                      <span class="member-avatar">{{ getMemberAvatar(memberId) }}</span>
-                      <span class="member-name">{{ getMemberName(memberId) }}</span>
+                <div class="detail-card">
+                  <div class="avatar-section">
+                    <div class="detail-avatar-wrapper">
+                      <div class="detail-avatar">{{ selectedContact.avatar }}</div>
+                      <span v-if="selectedContact.type !== 'group'" :class="['status-indicator', selectedContact.status || 'online']"></span>
+                    </div>
+                    <div class="detail-info">
+                      <h2 class="detail-name">{{ selectedContact.name }}</h2>
+                      <div class="detail-meta">
+                        <span :class="['type-badge', selectedContact.type]">
+                          {{ selectedContact.type === 'ai' ? (isEnglish ? 'AI' : 'AI助手') : 
+                             selectedContact.type === 'group' ? (isEnglish ? 'Group' : '群聊') : 
+                             (isEnglish ? 'User' : '用户') }}
+                        </span>
+                        <span v-if="selectedContact.type !== 'group'" class="status-text">
+                          {{ selectedContact.status === 'online' ? (isEnglish ? 'Online' : '在线') : (isEnglish ? 'Offline' : '离线') }}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <div class="detail-actions">
-                  <button class="chat-btn" @click="startChat(selectedContact)">
-                    {{ isEnglish ? 'Start Chat' : '发起聊天' }}
-                  </button>
-                  <button v-if="selectedContact.type === 'group'" class="invite-btn">
-                    {{ isEnglish ? 'Invite Members' : '邀请成员' }}
-                  </button>
+                  
+                  <div v-if="selectedContact.type === 'ai'" class="detail-section">
+                    <div class="section-header">
+                      <span class="section-icon">📋</span>
+                      <h4>{{ isEnglish ? 'Description' : '描述' }}</h4>
+                    </div>
+                    <p class="description-text">{{ getAiRoleDesc(selectedContact.roleId) || (isEnglish ? 'No description available' : '暂无描述') }}</p>
+                  </div>
+                  
+                  <div v-if="selectedContact.type === 'ai'" class="detail-section">
+                    <div class="section-header">
+                      <span class="section-icon">✨</span>
+                      <h4>{{ isEnglish ? 'Abilities' : '能力' }}</h4>
+                    </div>
+                    <div class="abilities-tags">
+                      <span class="ability-tag">{{ getAiAbility(selectedContact.roleId) }}</span>
+                    </div>
+                  </div>
+                  
+                  <div v-if="selectedContact.type === 'group'" class="detail-section">
+                    <div class="section-header">
+                      <span class="section-icon">👥</span>
+                      <h4>{{ isEnglish ? 'Members' : '成员' }}</h4>
+                      <span class="member-count">{{ selectedContact.memberCount }} {{ isEnglish ? 'members' : '名成员' }}</span>
+                    </div>
+                    <div class="members-grid">
+                      <div 
+                        v-for="(memberId, index) in selectedContact.members" 
+                        :key="index"
+                        class="member-card"
+                      >
+                        <span class="member-avatar">{{ getMemberAvatar(memberId) }}</span>
+                        <span class="member-name">{{ getMemberName(memberId) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div v-if="selectedContact.type === 'user'" class="detail-section">
+                    <div class="section-header">
+                      <span class="section-icon">📅</span>
+                      <h4>{{ isEnglish ? 'Joined' : '加入时间' }}</h4>
+                    </div>
+                    <p class="joined-date">{{ selectedContact.createdAt || (isEnglish ? 'Unknown' : '未知') }}</p>
+                  </div>
+                  
+                  <div class="detail-actions">
+                    <button class="action-btn primary" @click="startChat(selectedContact)">
+                      <span class="btn-icon">💬</span>
+                      {{ isEnglish ? 'Start Chat' : '发起聊天' }}
+                    </button>
+                    <button v-if="selectedContact.type === 'group'" class="action-btn secondary">
+                      <span class="btn-icon">👋</span>
+                      {{ isEnglish ? 'Invite Members' : '邀请成员' }}
+                    </button>
+                    <button v-if="selectedContact.type !== 'group'" class="action-btn outline">
+                      <span class="btn-icon">🔔</span>
+                      {{ isEnglish ? 'Notifications' : '通知设置' }}
+                    </button>
+                  </div>
                 </div>
               </div>
               
@@ -277,6 +322,13 @@
                 <label>{{ isEnglish ? 'Sound' : '声音提醒' }}</label>
                 <el-switch v-model="soundEnabled" />
               </div>
+            </div>
+            <div v-if="isAdmin" class="settings-section admin-section">
+              <h3>{{ isEnglish ? 'Admin Panel' : '后台管理' }}</h3>
+              <button class="admin-btn" @click="openAdminPanel">
+                <span class="admin-icon">⚙️</span>
+                {{ isEnglish ? 'Open Admin Panel' : '进入后台管理' }}
+              </button>
             </div>
           </div>
         </div>
@@ -432,6 +484,12 @@ const contactsSearchText = ref('')
 const selectedContact = ref(null)
 const sessions = ref([])
 
+const isAdmin = computed(() => userInfo.value?.role === 'admin')
+
+const openAdminPanel = () => {
+  window.location.href = '/admin'
+}
+
 const showCreateGroupModal = ref(false)
 const newGroupName = ref('')
 const newGroupAvatar = ref('👥')
@@ -576,8 +634,15 @@ const setCurrentTab = (tab) => {
   chatStore.setCurrentTab(tab)
 }
 
-const setCurrentView = (view) => {
+const setCurrentView = async (view) => {
+  console.log('setCurrentView called with view:', view)
   chatStore.setCurrentView(view)
+  if (view === 'contacts') {
+    console.log('Loading contacts data...')
+    await chatStore.initData(true)
+    await loadSessions()
+    console.log('Contacts data loaded')
+  }
 }
 
 const filteredFriends = computed(() => {
@@ -741,6 +806,18 @@ const currentMessagesList = computed(() => {
 const getAiRoleDesc = (roleId) => {
   const role = aiRoles.value.find(r => r.id === roleId)
   return role?.description || ''
+}
+
+const getAiAbility = (roleId) => {
+  const role = aiRoles.value.find(r => r.id === roleId)
+  if (!role) return '通用助手'
+  const abilities = {
+    'role-1': '股票分析',
+    'role-2': '产品经理',
+    'role-3': '健康顾问',
+    'role-4': '旅行助手'
+  }
+  return abilities[roleId] || role.name || '通用助手'
 }
 
 const getMemberAvatar = (memberId) => {
@@ -1472,135 +1549,275 @@ const sendMessage = async () => {
 .contacts-right {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  background: #f8fafc;
+  background: linear-gradient(180deg, #f0f6ff 0%, #f8fafc 100%);
+  padding: 40px;
+  overflow-y: auto;
 }
 
 .contact-detail {
-  text-align: center;
-  padding: 40px;
-  max-width: 400px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.detail-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(59, 130, 246, 0.08);
+  overflow: hidden;
+}
+
+.avatar-section {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.detail-avatar-wrapper {
+  position: relative;
 }
 
 .detail-avatar {
-  width: 100px;
-  height: 100px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 40px;
-  margin: 0 auto 20px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid white;
+}
+
+.status-indicator.online {
+  background: #10b981;
+}
+
+.status-indicator.offline {
+  background: #9ca3af;
+}
+
+.detail-info {
+  flex: 1;
 }
 
 .detail-name {
   font-size: 24px;
-  font-weight: 600;
-  color: #1e293b;
+  font-weight: 700;
+  color: white;
   margin: 0 0 8px;
 }
 
-.detail-type {
-  font-size: 14px;
-  color: #64748b;
-  margin: 0 0 24px;
+.detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.detail-desc, .detail-members {
-  background: white;
+.type-badge {
+  padding: 4px 12px;
   border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
-.detail-desc h4, .detail-members h4 {
+.type-badge.ai {
+  background: rgba(168, 85, 247, 0.3);
+}
+
+.type-badge.group {
+  background: rgba(249, 115, 22, 0.3);
+}
+
+.type-badge.user {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+.status-text {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.detail-section {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.detail-section:last-of-type {
+  border-bottom: none;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-header h4 {
   font-size: 14px;
   font-weight: 600;
   color: #334155;
-  margin: 0 0 12px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.detail-desc p {
-  font-size: 13px;
+.section-icon {
+  font-size: 16px;
+}
+
+.member-count {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.description-text {
+  font-size: 14px;
   color: #475569;
   line-height: 1.6;
   margin: 0;
 }
 
-.members-list {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.members-list .member-item {
+.abilities-tags {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ability-tag {
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  color: #7c3aed;
+}
+
+.members-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.member-card {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid #f1f5f9;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  transition: all 0.3s ease;
 }
 
-.members-list .member-item:last-child {
-  border-bottom: none;
+.member-card:hover {
+  background: #f0f6ff;
 }
 
-.members-list .member-avatar {
-  width: 32px;
-  height: 32px;
+.member-card .member-avatar {
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: #e0e7ff;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 18px;
 }
 
-.members-list .member-name {
+.member-card .member-name {
+  font-size: 12px;
+  color: #475569;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.joined-date {
   font-size: 13px;
-  color: #334155;
+  color: #64748b;
+  margin: 0;
 }
 
 .detail-actions {
   display: flex;
-  gap: 12px;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 20px 24px;
 }
 
-.chat-btn {
-  padding: 12px 32px;
-  border-radius: 24px;
+.action-btn {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
   border: none;
+}
+
+.action-btn.primary {
   background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
   color: white;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
 }
 
-.chat-btn:hover {
+.action-btn.primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
 }
 
-.invite-btn {
-  padding: 12px 32px;
-  border-radius: 24px;
-  border: 1px solid #3b82f6;
-  background: white;
-  color: #3b82f6;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.action-btn.secondary {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  color: white;
 }
 
-.invite-btn:hover {
-  background: #f0f6ff;
+.action-btn.secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.35);
 }
+
+.action-btn.outline {
+  background: transparent;
+  border: 1.5px solid #e2e8f0;
+  color: #64748b;
+}
+
+.action-btn.outline:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.btn-icon {
+  font-size: 16px;
+}
+
+
 
 .empty-detail {
   text-align: center;
@@ -1647,6 +1864,37 @@ const sendMessage = async () => {
   font-weight: 600;
   color: #334155;
   margin: 0 0 20px;
+}
+
+.settings-section.admin-section {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, rgba(245, 158, 11, 0.05) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.admin-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.35);
+}
+
+.admin-icon {
+  font-size: 18px;
 }
 
 .settings-item {

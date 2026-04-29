@@ -561,3 +561,105 @@ export const clearChatHistory = async (targetId, targetType) => {
     return { success: false, message: error.message || '操作失败' }
   }
 }
+
+export const getUsers = async () => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/admin/users`, {
+      method: 'GET',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('获取用户列表失败:', error)
+    return []
+  }
+}
+
+export const createUser = async (userData) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/admin/users`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(userData)
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return { success: true, data, message: '创建成功' }
+  } catch (error) {
+    console.error('创建用户失败:', error)
+    return { success: false, message: error.message || '创建失败' }
+  }
+}
+
+export const updateUser = async (userId, userData) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/admin/users/${userId}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(userData)
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return { success: true, data, message: '更新成功' }
+  } catch (error) {
+    console.error('更新用户失败:', error)
+    return { success: false, message: error.message || '更新失败' }
+  }
+}
+
+export const deleteUser = async (userId) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return { success: true, data, message: data.message }
+  } catch (error) {
+    console.error('删除用户失败:', error)
+    return { success: false, message: error.message || '删除失败' }
+  }
+}
+
+export const getAllSessions = async () => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/admin/sessions`, {
+      method: 'GET',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('获取会话列表失败:', error)
+    return {}
+  }
+}
+
+export const deleteAdminSession = async (sessionId) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/admin/sessions/${sessionId}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return { success: true, message: data.message }
+  } catch (error) {
+    console.error('删除会话失败:', error)
+    return { success: false, message: error.message || '删除失败' }
+  }
+}

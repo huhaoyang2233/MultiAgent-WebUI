@@ -148,7 +148,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useChatStore } from '../stores/chatStore';
-import { getCustomAgents, createCustomAgent, toggleSubscribeAgent } from '../services/chatApi';
+import { getCustomAgents, createCustomAgent } from '../services/chatApi';
 
 const chatStore = useChatStore();
 const { customAgents } = storeToRefs(chatStore);
@@ -219,8 +219,7 @@ const handleSubmit = async () => {
  }
 };
 const handleSubscribe = async (agentId) => {
- await toggleSubscribeAgent(agentId);
- chatStore.toggleSubscribeAgent(agentId);
+ await chatStore.toggleSubscribeAgent(agentId);
 };
 const handleChat = (agent) => {
  const friend = chatStore.friends.find(f => f.name === agent.name);
