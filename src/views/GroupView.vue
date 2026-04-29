@@ -180,25 +180,33 @@
                   :class="['contacts-list-item', { active: selectedContact?.id === item.id }]"
                   @click="selectContact(item)"
                 >
-                  <div class="list-avatar">{{ item.avatar }}</div>
+                  <div class="list-avatar-wrapper">
+                    <div class="list-avatar">{{ item.avatar }}</div>
+                    <span v-if="item.type !== 'group'" :class="['status-indicator', item.status || 'offline']"></span>
+                  </div>
                   <div class="list-info">
                     <span class="list-name">{{ item.name }}</span>
-                    <span class="list-desc">
-                      {{ item.type === 'ai' ? (isEnglish ? 'AI Assistant' : 'AI助手') : 
-                         item.type === 'group' ? (item.memberCount + ' ' + (isEnglish ? 'members' : '名成员')) :
-                         (item.status === 'online' ? (isEnglish ? 'Online' : '在线') : (isEnglish ? 'Offline' : '离线')) }}
-                    </span>
+                    <div class="list-desc">
+                      <span :class="['type-badge', item.type]">
+                        {{ item.type === 'ai' ? (isEnglish ? 'AI' : 'AI') : 
+                           item.type === 'group' ? (isEnglish ? 'Group' : '群聊') : 
+                           (isEnglish ? 'User' : '用户') }}
+                      </span>
+                      <span v-if="item.type === 'group'">{{ item.memberCount }} {{ isEnglish ? 'members' : '名成员' }}</span>
+                      <span v-else-if="item.type !== 'ai'">{{ item.status === 'online' ? (isEnglish ? 'Online' : '在线') : (isEnglish ? 'Offline' : '离线') }}</span>
+                    </div>
                   </div>
                   <button 
                     class="delete-btn" 
                     @click.stop="deleteConversation(item)"
-                    :title="isEnglish ? 'Delete conversation' : '删除会话'"
+                    :title="isEnglish ? 'Delete contact' : '删除联系人'"
                   >
-                    🗑️
+                    ✕
                   </button>
                 </div>
                 
                 <div v-if="filteredContacts.length === 0" class="empty-list">
+                  <div class="empty-icon">👤</div>
                   <p>{{ isEnglish ? 'No contacts found' : '没有找到联系人' }}</p>
                 </div>
               </div>
@@ -1711,37 +1719,78 @@ const sendMessage = async () => {
 .contacts-list {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  padding: 12px;
 }
 
 .contacts-list-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-radius: 8px;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
+  background: white;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .contacts-list-item:hover {
-  background: #f0f6ff;
+  background: #f8fafc;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 
 .contacts-list-item.active {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #93c5fd;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+}
+
+.list-avatar-wrapper {
+  position: relative;
 }
 
 .list-avatar {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 20px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  transition: transform 0.3s ease;
+}
+
+.contacts-list-item:hover .list-avatar {
+  transform: scale(1.05);
+}
+
+.contacts-list-item.active .list-avatar {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: white;
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.status-indicator.online {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+.status-indicator.offline {
+  background: #94a3b8;
 }
 
 .list-info {
@@ -1751,48 +1800,84 @@ const sendMessage = async () => {
 
 .list-name {
   display: block;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #1e293b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-bottom: 4px;
 }
 
 .list-desc {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   color: #64748b;
-  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.type-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.type-badge.ai {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.type-badge.group {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.type-badge.user {
+  background: #eff6ff;
+  color: #2563eb;
 }
 
 .delete-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   border: none;
   background: transparent;
-  font-size: 14px;
+  color: #94a3b8;
   cursor: pointer;
   opacity: 0;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 16px;
+}
+
+.delete-btn:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  transform: scale(1.1);
 }
 
 .contacts-list-item:hover .delete-btn {
   opacity: 1;
 }
 
-.delete-btn:hover {
-  background: #fee2e2;
-}
-
 .empty-list {
   text-align: center;
   padding: 40px 20px;
   color: #94a3b8;
+}
+
+.empty-list .empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
 }
 
 .empty-list p {
