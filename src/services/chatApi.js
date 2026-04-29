@@ -458,6 +458,40 @@ export const getGroups = async () => {
   }
 }
 
+export const addGroupMember = async (groupId, memberId) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/groups/${groupId}/members?member_id=${memberId}`, {
+      method: 'PUT',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('邀请成员失败:', error)
+    return { success: false, message: error.message || '邀请失败' }
+  }
+}
+
+export const removeGroupMember = async (groupId, memberId) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/groups/${groupId}/members?member_id=${memberId}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('移除成员失败:', error)
+    return { success: false, message: error.message || '移除失败' }
+  }
+}
+
 export const getCustomAgents = async () => {
   try {
     const response = await fetch(`${API_CONFIG.baseUrl}/custom-agents`, {

@@ -14,8 +14,22 @@
       "name": "AI讨论群",
       "content": "感谢分享！",
       "timestamp": "2026-04-29T02:58:33.348365Z"
+    },
+    {
+      "id": "msg-c21eff1d",
+      "role": "user",
+      "name": "admin",
+      "content": "hi",
+      "timestamp": "2026-04-29T07:21:58.303079Z"
+    },
+    {
+      "id": "msg-2b15c496",
+      "role": "assistant",
+      "name": "张三",
+      "content": "我觉得还要再观察一下。",
+      "timestamp": "2026-04-29T07:21:58.310916Z"
     }
   ],
   "created_at": "2026-04-29T02:58:33.342165Z",
-  "updated_at": "2026-04-29T02:58:33.348414Z"
+  "updated_at": "2026-04-29T07:21:58.317072Z"
 }

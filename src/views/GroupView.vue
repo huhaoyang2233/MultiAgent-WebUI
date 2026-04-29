@@ -97,13 +97,13 @@
               </div>
             </div>
 
-            <div class="message-list">
+            <div ref="messageListRef" class="message-list">
               <div 
                 v-for="msg in currentMessagesList" 
                 :key="msg.id"
                 :class="['message-item', { 'is-user': msg.role === 'user' }]"
               >
-                <span class="message-avatar">{{ msg.role === 'user' ? '👤' : currentChatTarget?.avatar }}</span>
+                <span class="message-avatar">{{ getMessageAvatar(msg) }}</span>
                 <div class="message-content">
                   <span class="message-name" v-if="msg.role !== 'user'">{{ msg.name || currentChatTarget?.name }}</span>
                   <div class="message-bubble">
@@ -381,11 +381,18 @@
               >
                 <span class="member-avatar">{{ getMemberAvatar(memberId) }}</span>
                 <span class="member-name">{{ getMemberName(memberId) }}</span>
+                <button 
+                  v-if="memberId !== currentUserId" 
+                  class="member-remove-btn" 
+                  @click="confirmRemoveMember(memberId)"
+                >
+                  ✕
+                </button>
               </div>
             </div>
 
             <div class="group-info-actions">
-              <button class="action-btn invite-btn">
+              <button class="action-btn invite-btn" @click="showInviteModal = true">
                 <span class="btn-icon">👥</span>
                 <span class="btn-text">{{ isEnglish ? 'Invite' : '邀请' }}</span>
               </button>
@@ -402,6 +409,43 @@
           <p>{{ isEnglish ? 'Select a chat to view info' : '选择聊天对象查看信息' }}</p>
         </div>
       </aside>
+    </div>
+
+    <div v-if="showInviteModal" class="modal-overlay" @click.self="showInviteModal = false">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>{{ isEnglish ? 'Invite Members' : '邀请成员' }}</h3>
+          <button class="modal-close" @click="showInviteModal = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>{{ isEnglish ? 'Select Friends to Invite' : '选择要邀请的好友' }}</label>
+            <div class="member-select">
+              <div 
+                v-for="friend in availableFriendsForInvite" 
+                :key="friend.id"
+                :class="['member-option', { selected: selectedInviteMembers.includes(friend.id) }]"
+                @click="toggleInviteMember(friend.id)"
+              >
+                <span class="member-avatar">{{ friend.avatar }}</span>
+                <span class="member-name">{{ friend.name }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn cancel" @click="showInviteModal = false">
+            {{ isEnglish ? 'Cancel' : '取消' }}
+          </button>
+          <button 
+            class="modal-btn confirm" 
+            @click="handleInviteMembers"
+            :disabled="selectedInviteMembers.length === 0"
+          >
+            {{ isEnglish ? 'Invite' : '邀请' }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div v-if="showCreateGroupModal" class="modal-overlay" @click.self="showCreateGroupModal = false">
@@ -468,7 +512,7 @@ import { storeToRefs } from 'pinia'
 import { useChatStore } from '../stores/chatStore'
 import Header from '../components/Header.vue'
 import AgentManager from '../components/AgentManager.vue'
-import { chatWithAgent, chatWithFriend, chatInGroup, checkOrCreateSession, createGroup, getUserSessions, getChatHistory, deleteFriend } from '../services/chatApi'
+import { chatWithAgent, chatWithFriend, chatInGroup, checkOrCreateSession, createGroup, getUserSessions, getChatHistory, deleteFriend, addGroupMember, removeGroupMember } from '../services/chatApi'
 
 const chatStore = useChatStore()
 
@@ -510,8 +554,20 @@ const newGroupAvatar = ref('👥')
 const selectedMembers = ref([])
 const avatarOptions = ['👥', '🤖', '📊', '💬', '👨‍👩‍👧', '🌍', '🏢', '🎯']
 
+const showInviteModal = ref(false)
+const selectedInviteMembers = ref([])
+
+const currentUserId = computed(() => userInfo.value?.id || '')
+
 const availableFriends = computed(() => {
   return friends.value.filter(f => f.type === 'ai' || f.type === 'user')
+})
+
+const availableFriendsForInvite = computed(() => {
+  const currentMembers = currentGroup.value?.members || []
+  return friends.value.filter(f => 
+    (f.type === 'ai' || f.type === 'user') && !currentMembers.includes(f.id)
+  )
 })
 
 const toggleMember = (friendId) => {
@@ -520,6 +576,62 @@ const toggleMember = (friendId) => {
     selectedMembers.value.splice(index, 1)
   } else {
     selectedMembers.value.push(friendId)
+  }
+}
+
+const toggleInviteMember = (friendId) => {
+  const index = selectedInviteMembers.value.indexOf(friendId)
+  if (index > -1) {
+    selectedInviteMembers.value.splice(index, 1)
+  } else {
+    selectedInviteMembers.value.push(friendId)
+  }
+}
+
+const handleInviteMembers = async () => {
+  if (!currentGroupId.value || selectedInviteMembers.value.length === 0) return
+  
+  try {
+    for (const memberId of selectedInviteMembers.value) {
+      await addGroupMember(currentGroupId.value, memberId)
+    }
+    await chatStore.loadGroups()
+    showInviteModal.value = false
+    selectedInviteMembers.value = []
+    
+    const ElMessage = await import('element-plus').then(m => m.ElMessage)
+    ElMessage.success(isEnglish.value ? 'Members invited successfully' : '邀请成功')
+  } catch (error) {
+    console.error('邀请成员失败:', error)
+    const ElMessage = await import('element-plus').then(m => m.ElMessage)
+    ElMessage.error(isEnglish.value ? 'Invite failed' : '邀请失败')
+  }
+}
+
+const confirmRemoveMember = async (memberId) => {
+  if (!currentGroupId.value) return
+  
+  try {
+    const ElMessageBox = await import('element-plus').then(m => m.ElMessageBox)
+    const ElMessage = await import('element-plus').then(m => m.ElMessage)
+    
+    await ElMessageBox.confirm(
+      isEnglish.value
+        ? `Are you sure you want to remove ${getMemberName(memberId)} from the group?`
+        : `确定要将 ${getMemberName(memberId)} 移出群聊吗？`,
+      isEnglish.value ? 'Confirm Remove' : '确认移出',
+      {
+        confirmButtonText: isEnglish.value ? 'Remove' : '移出',
+        cancelButtonText: isEnglish.value ? 'Cancel' : '取消',
+        type: 'warning'
+      }
+    )
+    
+    await removeGroupMember(currentGroupId.value, memberId)
+    await chatStore.loadGroups()
+    ElMessage.success(isEnglish.value ? 'Member removed' : '已移出成员')
+  } catch {
+    console.log('取消移除')
   }
 }
 
@@ -904,6 +1016,22 @@ const getMemberName = (memberId) => {
   return friend?.name || memberId
 }
 
+const getMessageAvatar = (msg) => {
+  if (msg.role === 'user') {
+    return '👤'
+  }
+  if (currentGroup.value && msg.name) {
+    const member = currentGroup.value.members?.find(m => {
+      const friend = friends.value.find(f => f.id === m)
+      return friend?.name === msg.name
+    })
+    if (member) {
+      return getMemberAvatar(member)
+    }
+  }
+  return currentChatTarget?.avatar || '🤖'
+}
+
 const sendMessage = async () => {
   if (!inputMessage.value.trim()) return
   
@@ -1215,6 +1343,7 @@ const sendMessage = async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .empty-chat {
@@ -1248,6 +1377,7 @@ const sendMessage = async () => {
   display: flex;
   flex-direction: column;
   background: white;
+  min-height: 0;
 }
 
 .chat-header {
@@ -2240,6 +2370,11 @@ const sendMessage = async () => {
   align-items: center;
   gap: 10px;
   padding: 8px 0;
+  justify-content: space-between;
+}
+
+.member-item > span:first-child {
+  flex-shrink: 0;
 }
 
 .member-avatar {
@@ -2251,6 +2386,30 @@ const sendMessage = async () => {
   align-items: center;
   justify-content: center;
   font-size: 16px;
+}
+
+.member-remove-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.member-item:hover .member-remove-btn {
+  opacity: 1;
+}
+
+.member-remove-btn:hover {
+  background: #fee2e2;
 }
 
 .member-name {

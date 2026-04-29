@@ -202,6 +202,24 @@ async def chat(request: ChatRequest):
 
     return ai_msg
 
+def get_group_member_name(member_id: str, user_id: str) -> str:
+    friends = friends_db.get(user_id, [])
+    for friend in friends:
+        if friend.get("id") == member_id:
+            return friend.get("name", member_id)
+    return member_id
+
+import random
+
+def get_random_group_speaker(group_member_ids: list, user_id: str, exclude_member_id: str = None) -> str:
+    valid_members = [mid for mid in group_member_ids if mid != exclude_member_id]
+    
+    if not valid_members:
+        return "群成员"
+    
+    random_member_id = random.choice(valid_members)
+    return get_group_member_name(random_member_id, user_id)
+
 @router.post("/group/{group_id}", summary="群聊")
 async def chat_group(group_id: str, request: ChatRequest, current_user: dict = Depends(get_current_user)):
     user_id = request.user_config.get("user_ID", current_user["id"])
@@ -211,22 +229,36 @@ async def chat_group(group_id: str, request: ChatRequest, current_user: dict = D
     
     ensure_session(session_id, current_user["id"])
 
+    groups = groups_db.get(current_user["id"], [])
+    group_member_ids = []
+    for group in groups:
+        if group.get("id") == group_id:
+            group_member_ids = group.get("members", [])
+            break
+
+    user_name = current_user["username"]
+    if group_member_ids and current_user["id"] in group_member_ids:
+        current_member_name = get_group_member_name(current_user["id"], current_user["id"])
+        if current_member_name != current_user["id"]:
+            user_name = current_member_name
+
     user_msg = {
         "id": f"msg-{uuid.uuid4().hex[:8]}",
         "role": "user",
-        "name": current_user["username"],
+        "name": user_name,
         "content": query,
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
     save_chat_message(session_id, user_msg)
 
-    import random
     response_content = random.choice(GROUP_RESPONSES)
+
+    speaker_name = get_random_group_speaker(group_member_ids, current_user["id"], current_user["id"])
 
     ai_msg = {
         "id": f"msg-{uuid.uuid4().hex[:8]}",
         "role": "assistant",
-        "name": get_group_name(group_id, current_user["id"]),
+        "name": speaker_name,
         "content": response_content,
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
