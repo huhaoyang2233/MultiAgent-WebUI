@@ -503,6 +503,20 @@
         </div>
       </div>
     </div>
+    
+    <footer class="app-footer">
+      <div class="footer-content">
+        <div class="footer-left">
+          <span class="footer-logo">🤖 MultiAgent Chat</span>
+          <span class="footer-copyright">© 2024 All rights reserved</span>
+        </div>
+        <div class="footer-right">
+          <a href="#" class="footer-link">{{ isEnglish ? 'Privacy Policy' : '隐私政策' }}</a>
+          <a href="#" class="footer-link">{{ isEnglish ? 'Terms of Service' : '服务条款' }}</a>
+          <a href="#" class="footer-link">{{ isEnglish ? 'Contact Us' : '联系我们' }}</a>
+        </div>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -512,7 +526,7 @@ import { storeToRefs } from 'pinia'
 import { useChatStore } from '../stores/chatStore'
 import Header from '../components/Header.vue'
 import AgentManager from '../components/AgentManager.vue'
-import { chatWithAgent, chatWithFriend, chatInGroup, checkOrCreateSession, createGroup, getUserSessions, getChatHistory, deleteFriend, addGroupMember, removeGroupMember } from '../services/chatApi'
+import { chatWithAgent, chatWithFriend, chatInGroup, checkOrCreateSession, createGroup, getUserSessions, getChatHistory, deleteFriend, addGroupMember, removeGroupMember, deleteGroup } from '../services/chatApi'
 
 const chatStore = useChatStore()
 
@@ -751,11 +765,46 @@ const startChat = (contact) => {
   chatStore.setCurrentView('chat')
 }
 
-const deleteConversation = (contact) => {
-  if (contact.type === 'group') {
-    chatStore.clearGroupMessages(contact.id)
-  } else {
-    chatStore.clearFriendMessages(contact.id)
+const deleteConversation = async (contact) => {
+  try {
+    const ElMessageBox = await import('element-plus').then(m => m.ElMessageBox)
+    const ElMessage = await import('element-plus').then(m => m.ElMessage)
+    
+    const message = isEnglish.value
+      ? contact.type === 'group'
+        ? `Are you sure you want to delete group "${contact.name}"?`
+        : `Are you sure you want to remove ${contact.name} from your contacts?`
+      : contact.type === 'group'
+        ? `确定要删除群聊"${contact.name}"吗？`
+        : `确定要将 ${contact.name} 从通讯录中删除吗？`
+    
+    const title = isEnglish.value ? 'Confirm Delete' : '确认删除'
+    
+    await ElMessageBox.confirm(
+      message,
+      title,
+      {
+        confirmButtonText: isEnglish.value ? 'Delete' : '删除',
+        cancelButtonText: isEnglish.value ? 'Cancel' : '取消',
+        type: 'warning'
+      }
+    )
+    
+    if (contact.type === 'group') {
+      await deleteGroup(contact.id)
+      await chatStore.loadGroups()
+    } else {
+      await deleteFriend(contact.id)
+      await chatStore.loadFriends()
+    }
+    
+    if (selectedContact.value?.id === contact.id) {
+      selectedContact.value = null
+    }
+    
+    ElMessage.success(isEnglish.value ? 'Deleted successfully' : '删除成功')
+  } catch {
+    console.log('取消删除')
   }
 }
 
@@ -1095,7 +1144,7 @@ const sendMessage = async () => {
 .group-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   background-color: #f0f6ff;
 }
 
@@ -1344,6 +1393,7 @@ const sendMessage = async () => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  max-height: calc(100vh - 130px);
 }
 
 .empty-chat {
@@ -2650,5 +2700,53 @@ const sendMessage = async () => {
 .modal-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.app-footer {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #334155;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer-logo {
+  font-size: 16px;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.footer-copyright {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.footer-right {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-link {
+  font-size: 13px;
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: #3b82f6;
 }
 </style>

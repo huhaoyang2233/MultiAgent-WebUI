@@ -492,6 +492,23 @@ export const removeGroupMember = async (groupId, memberId) => {
   }
 }
 
+export const deleteGroup = async (groupId) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/groups/${groupId}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('删除群聊失败:', error)
+    return { success: false, message: error.message || '删除失败' }
+  }
+}
+
 export const getCustomAgents = async () => {
   try {
     const response = await fetch(`${API_CONFIG.baseUrl}/custom-agents`, {
