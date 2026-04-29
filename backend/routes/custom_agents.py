@@ -19,6 +19,7 @@ class CustomAgent(BaseModel):
     personality: str
     description: str
     subscribed: bool
+    public: bool
     created_at: str
 
 class CustomAgentCreate(BaseModel):
@@ -27,10 +28,12 @@ class CustomAgentCreate(BaseModel):
     ability: str
     personality: str
     description: str
+    public: bool = True
 
 @router.get("/", summary="获取自定义智能体列表（包含订阅状态）")
 async def get_custom_agents(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
+    user_role = current_user.get("role", "user")
     agents = db.get("custom_agents", [])
     user_friends = friends_db.get(user_id, [])
     
@@ -38,11 +41,12 @@ async def get_custom_agents(current_user: dict = Depends(get_current_user)):
     
     result = []
     for agent in agents:
-        is_subscribed = agent["id"] in agent_ids_in_friends
-        result.append({
-            **agent,
-            "subscribed": is_subscribed
-        })
+        if agent.get("public", True) or user_role == "admin":
+            is_subscribed = agent["id"] in agent_ids_in_friends
+            result.append({
+                **agent,
+                "subscribed": is_subscribed
+            })
     
     return {"custom_agents": result}
 
@@ -76,6 +80,7 @@ async def create_custom_agent(agent: CustomAgentCreate, current_user: dict = Dep
         "personality": agent.personality,
         "description": agent.description,
         "subscribed": False,
+        "public": agent.public,
         "created_at": datetime.utcnow().isoformat() + "Z"
     }
     
@@ -154,6 +159,7 @@ async def update_custom_agent(agent_id: str, agent: CustomAgentCreate, current_u
         "personality": agent.personality,
         "description": agent.description,
         "subscribed": existing_agent["subscribed"],
+        "public": agent.public,
         "created_at": existing_agent["created_at"]
     }
     

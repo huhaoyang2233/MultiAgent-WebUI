@@ -663,3 +663,73 @@ export const deleteAdminSession = async (sessionId) => {
     return { success: false, message: error.message || '删除失败' }
   }
 }
+
+export const getUserFriends = async (userId) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/admin/users/${userId}/friends`, {
+      method: 'GET',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return data.friends || []
+  } catch (error) {
+    console.error('获取用户好友列表失败:', error)
+    return []
+  }
+}
+
+export const getUserGroups = async (userId) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/admin/users/${userId}/groups`, {
+      method: 'GET',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return data.groups || []
+  } catch (error) {
+    console.error('获取用户群组列表失败:', error)
+    return []
+  }
+}
+
+export const getSessionHistory = async (sessionId) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/chat-history/session/${sessionId}`, {
+      method: 'GET',
+      headers: getHeaders()
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    return data.chat || null
+  } catch (error) {
+    console.error('获取会话历史失败:', error)
+    return null
+  }
+}
+
+export const updateCustomAgent = async (agentId, agentData) => {
+  try {
+    const response = await fetch(`${API_CONFIG.baseUrl}/custom-agents/${agentId}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(agentData)
+    })
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.detail || `更新失败 ${response.status}`)
+    }
+    const data = await response.json()
+    return { success: true, data, message: '更新成功' }
+  } catch (error) {
+    console.error('更新智能体失败:', error)
+    return { success: false, message: error.message || '更新失败' }
+  }
+}

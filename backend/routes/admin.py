@@ -12,6 +12,8 @@ from routes.auth import get_current_user
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 users_db = JSONDatabase("users")
+friends_db = JSONDatabase("friends")
+groups_db = JSONDatabase("groups")
 
 class UserCreate(BaseModel):
     username: str
@@ -184,3 +186,38 @@ async def delete_session(session_id: str, current_user: dict = Depends(get_curre
         os.remove(session_file)
     
     return {"message": "Session deleted successfully"}
+
+@router.get("/users/{user_id}/friends", summary="获取指定用户的好友列表")
+async def get_user_friends(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Permission denied")
+    
+    user_friends = friends_db.get(user_id, [])
+    all_users = users_db.get("users", [])
+    user_map = {u["id"]: u for u in all_users}
+    
+    friends_with_details = []
+    for friend in user_friends:
+        if friend.get("type") == "user" and friend.get("role_id"):
+            user_info = user_map.get(friend["role_id"])
+            if user_info:
+                friend["username"] = user_info["username"]
+                friend["email"] = user_info.get("email", "")
+        friends_with_details.append(friend)
+    
+    return {"friends": friends_with_details}
+
+@router.get("/users/{user_id}/groups", summary="获取指定用户的群组列表")
+async def get_user_groups(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Permission denied")
+    
+    all_groups = groups_db.get("groups", [])
+    user_groups = []
+    
+    for group in all_groups:
+        members = group.get("members", [])
+        if user_id in members:
+            user_groups.append(group)
+    
+    return {"groups": user_groups}
