@@ -3,7 +3,7 @@
     <div class="header-left">
       <div class="logo">
         <span class="logo-icon">🤖</span>
-        <span class="logo-text">{{ isEnglish ? 'AI Agent Hub' : 'AI智能助手' }}</span>
+        <span class="logo-text">{{ isEnglish ? 'Multi-Agent Platform' : '多智能体平台' }}</span>
       </div>
     </div>
 
@@ -86,6 +86,10 @@ const toggleLanguage = () => {
   isEnglish.value = !isEnglish.value
   localStorage.setItem('language', isEnglish.value ? 'en' : 'zh')
   ElMessage.success(isEnglish.value ? 'Switched to English' : '已切换为中文')
+  // 刷新页面以应用新的语言设置
+  setTimeout(() => {
+    window.location.reload()
+  }, 500)
 }
 
 const handleCommand = (command) => {

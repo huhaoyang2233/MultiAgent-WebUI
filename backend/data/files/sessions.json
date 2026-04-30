@@ -51,6 +51,17 @@
         "ai_type": "ai",
         "role_id": "role-2"
       }
+    },
+    {
+      "session_id": "user-1_agent_friend-1103bd21",
+      "chat_type": "agent",
+      "target_id": "friend-1103bd21",
+      "target_info": {
+        "ai_id": "friend-1103bd21",
+        "ai_name": "胡浩扬",
+        "ai_type": "ai",
+        "role_id": "agent-812631d3"
+      }
     }
   ]
 }

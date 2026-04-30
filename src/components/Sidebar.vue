@@ -4,10 +4,10 @@
     <div class="sidebar-header">
       <div class="logo" v-show="!collapsed">
         <el-icon size="24" color="#409EFF"><ChatDotRound /></el-icon>
-        <span>智能多AGENT股票推荐聊天室</span>
+        <span>{{ isEnglish ? 'Multi-Agent Platform' : '多智能体平台' }}</span>
       </div>
-      <el-button 
-        :icon="collapsed ? Expand : Fold" 
+      <el-button
+        :icon="collapsed ? Expand : Fold"
         @click="$emit('toggle')"
         circle
         size="small"
@@ -17,15 +17,15 @@
 
     <!-- 新建对话按钮 -->
     <div class="new-chat-section">
-      <el-button 
-        type="primary" 
+      <el-button
+        type="primary"
         @click="$emit('new-chat')"
         :class="{ 'collapsed-btn': collapsed }"
         class="new-chat-btn"
       >
         <el-icon v-if="!collapsed"><Plus /></el-icon>
         <el-icon v-else><Edit /></el-icon>
-        <span v-if="!collapsed">新建对话</span>
+        <span v-if="!collapsed">{{ isEnglish ? 'New Chat' : '新建对话' }}</span>
       </el-button>
     </div>
 
@@ -33,12 +33,12 @@
     <div class="chat-history">
       <div class="section-title" v-show="!collapsed">
         <el-icon><Clock /></el-icon>
-        <span>历史记录</span>
+        <span>{{ isEnglish ? 'History' : '历史记录' }}</span>
       </div>
-      
+
       <div class="chat-list">
-        <div 
-          v-for="chat in sortedChatHistory" 
+        <div
+          v-for="chat in sortedChatHistory"
           :key="chat.id"
           class="chat-item"
           :class="{ active: currentChatId === chat.id, collapsed: collapsed }"
@@ -47,7 +47,7 @@
           <div class="chat-content">
             <div class="chat-title" v-show="!collapsed">{{ chat.title }}</div>
             <div class="chat-meta" v-show="!collapsed">
-              <span class="message-count">{{ chat.messageCount }} 条消息</span>
+              <span class="message-count">{{ chat.messageCount }} {{ isEnglish ? 'messages' : '条消息' }}</span>
               <span class="update-time">{{ formatTime(chat.updatedAt) }}</span>
             </div>
             <div class="chat-icon" v-show="collapsed">
@@ -61,7 +61,7 @@
 
         <div v-if="chatHistory.length === 0" class="empty-state">
           <el-icon size="48" color="#C0C4CC"><ChatDotRound /></el-icon>
-          <p v-show="!collapsed">暂无对话记录</p>
+          <p v-show="!collapsed">{{ isEnglish ? 'No chat history' : '暂无对话记录' }}</p>
         </div>
       </div>
     </div>
@@ -71,22 +71,22 @@
       <el-dropdown @command="handleCommand">
         <el-button text>
           <el-icon><Setting /></el-icon>
-          <span>设置</span>
+          <span>{{ isEnglish ? 'Settings' : '设置' }}</span>
           <el-icon class="el-icon--right"><ArrowDown /></el-icon>
         </el-button>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="clear">清空所有对话</el-dropdown-item>
-            <el-dropdown-item command="export">导出对话</el-dropdown-item>
-            <el-dropdown-item command="import">导入对话</el-dropdown-item>
-            <el-dropdown-item command="logout">注销账户</el-dropdown-item>
+            <el-dropdown-item command="clear">{{ isEnglish ? 'Clear All Chats' : '清空所有对话' }}</el-dropdown-item>
+            <el-dropdown-item command="export">{{ isEnglish ? 'Export Chats' : '导出对话' }}</el-dropdown-item>
+            <el-dropdown-item command="import">{{ isEnglish ? 'Import Chats' : '导入对话' }}</el-dropdown-item>
+            <el-dropdown-item command="logout">{{ isEnglish ? 'Logout' : '注销账户' }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
 
       <!-- 用户头像按钮 -->
-      <el-button circle size="large" class="avatar-btn" @click="openLogin">
-        <img src="https://i.pravatar.cc/40" alt="用户头像" class="avatar-img" />
+      <el-button circle size="large" class="avatar-btn">
+        <img src="https://i.pravatar.cc/40" :alt="isEnglish ? 'User Avatar' : '用户头像'" class="avatar-img" />
       </el-button>
     </div>
   </div>
@@ -107,6 +107,7 @@ const props = defineProps({
 const emit = defineEmits(['toggle', 'new-chat', 'select-chat'])
 
 const chatStore = useChatStore()
+const isEnglish = computed(() => chatStore.isEnglish)
 
 // 历史聊天排序（按更新时间降序）
 const sortedChatHistory = computed(() => {
@@ -115,13 +116,17 @@ const sortedChatHistory = computed(() => {
 
 // 删除会话
 const deleteChat = (chatId) => {
-  ElMessageBox.confirm('确定要删除这个对话吗？', '确认删除', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
+  ElMessageBox.confirm(
+    isEnglish.value ? 'Are you sure you want to delete this chat?' : '确定要删除这个对话吗？',
+    isEnglish.value ? 'Confirm Delete' : '确认删除',
+    {
+      confirmButtonText: isEnglish.value ? 'Delete' : '确定',
+      cancelButtonText: isEnglish.value ? 'Cancel' : '取消',
+      type: 'warning'
+    }
+  ).then(() => {
     chatStore.deleteChat(chatId)
-    ElMessage.success('删除成功')
+    ElMessage.success(isEnglish.value ? 'Deleted successfully' : '删除成功')
   }).catch(() => {})
 }
 
@@ -129,31 +134,39 @@ const deleteChat = (chatId) => {
 const handleCommand = (command) => {
   switch(command){
     case 'clear':
-      ElMessageBox.confirm('确定要清空所有对话吗？此操作不可恢复！', '确认清空', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
+      ElMessageBox.confirm(
+        isEnglish.value ? 'Are you sure you want to clear all chats? This action cannot be undone!' : '确定要清空所有对话吗？此操作不可恢复！',
+        isEnglish.value ? 'Confirm Clear' : '确认清空',
+        {
+          confirmButtonText: isEnglish.value ? 'Clear' : '确定',
+          cancelButtonText: isEnglish.value ? 'Cancel' : '取消',
+          type: 'warning'
+        }
+      ).then(() => {
         chatStore.clearAllChats()
-        ElMessage.success('已清空所有对话')
+        ElMessage.success(isEnglish.value ? 'All chats cleared' : '已清空所有对话')
       })
       break
     case 'export':
-      ElMessage.info('导出功能开发中...')
+      ElMessage.info(isEnglish.value ? 'Export feature coming soon...' : '导出功能开发中...')
       break
     case 'import':
-      ElMessage.info('导入功能开发中...')
+      ElMessage.info(isEnglish.value ? 'Import feature coming soon...' : '导入功能开发中...')
       break
     case 'logout':
-      ElMessageBox.confirm('确定要注销账户吗？', '注销账户', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
+      ElMessageBox.confirm(
+        isEnglish.value ? 'Are you sure you want to logout?' : '确定要注销账户吗？',
+        isEnglish.value ? 'Logout' : '注销账户',
+        {
+          confirmButtonText: isEnglish.value ? 'Logout' : '确定',
+          cancelButtonText: isEnglish.value ? 'Cancel' : '取消',
+          type: 'warning'
+        }
+      ).then(() => {
         localStorage.removeItem('userToken')
         localStorage.removeItem('userInfo')
         chatStore.clearAllChats()
-        ElMessage.success('已注销账户，请重新登录')
+        ElMessage.success(isEnglish.value ? 'Logged out successfully. Please login again.' : '已注销账户，请重新登录')
         window.location.href = '/login'
       }).catch(() => {})
       break
@@ -165,11 +178,11 @@ const formatTime = (date) => {
   const now = new Date()
   const chatDate = new Date(date)
   const diff = now - chatDate
-  if(diff < 60000) return '刚刚'
-  if(diff < 3600000) return `${Math.floor(diff/60000)}分钟前`
-  if(diff < 86400000) return `${Math.floor(diff/3600000)}小时前`
-  if(diff < 604800000) return `${Math.floor(diff/86400000)}天前`
-  return chatDate.toLocaleDateString()
+  if(diff < 60000) return isEnglish.value ? 'Just now' : '刚刚'
+  if(diff < 3600000) return isEnglish.value ? `${Math.floor(diff/60000)} min ago` : `${Math.floor(diff/60000)}分钟前`
+  if(diff < 86400000) return isEnglish.value ? `${Math.floor(diff/3600000)} hours ago` : `${Math.floor(diff/3600000)}小时前`
+  if(diff < 604800000) return isEnglish.value ? `${Math.floor(diff/86400000)} days ago` : `${Math.floor(diff/86400000)}天前`
+  return chatDate.toLocaleDateString(isEnglish.value ? 'en-US' : 'zh-CN')
 }
 
 

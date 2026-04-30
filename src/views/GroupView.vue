@@ -25,7 +25,7 @@
             @click="setCurrentView('agents')"
           >
             <span class="nav-icon">🤖</span>
-            <span>{{ isEnglish ? 'Agents' : '智能体管理' }}</span>
+            <span>{{ isEnglish ? 'Agents' : '智能体广场' }}</span>
           </div>
           <div 
             :class="['nav-item', { active: currentView === 'settings' }]"

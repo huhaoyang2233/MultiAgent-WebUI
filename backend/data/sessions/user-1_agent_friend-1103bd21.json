@@ -1,0 +1,28 @@
+{
+  "session_id": "user-1_agent_friend-1103bd21",
+  "messages": [
+    {
+      "id": "msg-f3ce7c54",
+      "role": "user",
+      "name": "admin",
+      "content": "你好",
+      "timestamp": "2026-04-30T07:09:12.467662Z"
+    },
+    {
+      "id": "msg-3b1e75c0",
+      "role": "assistant",
+      "name": "胡浩扬",
+      "content": "从技术面来看，科创板 处于上升通道中，短期支撑位在均线附近，建议逢低布局。",
+      "timestamp": "2026-04-30T07:09:12.468111Z"
+    }
+  ],
+  "created_at": "2026-04-30T07:09:12.458289Z",
+  "updated_at": "2026-04-30T07:09:12.468165Z",
+  "chat_type": "agent",
+  "target_info": {
+    "ai_id": "friend-1103bd21",
+    "ai_name": "胡浩扬",
+    "ai_type": "ai",
+    "role_id": "agent-812631d3"
+  }
+}

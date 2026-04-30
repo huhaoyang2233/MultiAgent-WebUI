@@ -1,7 +1,7 @@
 <template>
   <div class="agent-manager">
     <div class="manager-header">
-      <h2>{{ isEnglish ? 'Agent Management' : '智能体管理' }}</h2>
+      <h2>{{ isEnglish ? 'Agent Management' : '智能体广场' }}</h2>
       <button class="create-btn" @click="openCreateModal">
         <span class="btn-icon">+</span>
         <span>{{ isEnglish ? 'Create Agent' : '创建智能体' }}</span>

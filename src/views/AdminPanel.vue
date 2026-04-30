@@ -122,7 +122,7 @@
       
       <div v-if="adminTab === 'agents'" class="agents-panel">
         <div class="panel-header">
-          <h2>{{ isEnglish ? 'Agent Management' : '智能体管理' }}</h2>
+          <h2>{{ isEnglish ? 'Agent Management' : '智能体广场' }}</h2>
         </div>
         
         <div class="search-bar">
@@ -999,16 +999,18 @@ onMounted(async () => {
 
 .user-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .user-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px;
+  gap: 12px;
+  padding: 14px;
   border-radius: 14px;
   background: white;
   cursor: pointer;
@@ -1034,6 +1036,8 @@ onMounted(async () => {
 
 .user-info {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .user-info h3 {
@@ -1041,12 +1045,18 @@ onMounted(async () => {
   font-weight: 600;
   color: #1e293b;
   margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-info p {
   font-size: 13px;
   color: #64748b;
   margin: 0 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .role-badge {
