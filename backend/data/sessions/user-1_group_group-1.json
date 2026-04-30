@@ -28,8 +28,50 @@
       "name": "张三",
       "content": "我觉得还要再观察一下。",
       "timestamp": "2026-04-29T07:21:58.310916Z"
+    },
+    {
+      "id": "msg-4923a44f",
+      "role": "user",
+      "name": "admin",
+      "content": "hi",
+      "timestamp": "2026-04-30T04:20:20.690354Z"
+    },
+    {
+      "id": "msg-c6395df7",
+      "role": "assistant",
+      "name": "张三",
+      "content": "感谢分享！",
+      "timestamp": "2026-04-30T04:20:20.691291Z"
+    },
+    {
+      "id": "msg-a1349f71",
+      "role": "user",
+      "name": "admin",
+      "content": "你好",
+      "timestamp": "2026-04-30T06:36:35.243183Z"
+    },
+    {
+      "id": "msg-3bab7733",
+      "role": "assistant",
+      "name": "张三",
+      "content": "感谢分享！",
+      "timestamp": "2026-04-30T06:36:35.244122Z"
+    },
+    {
+      "id": "msg-989e59d5",
+      "role": "user",
+      "name": "admin",
+      "content": "hhi",
+      "timestamp": "2026-04-30T06:43:28.273032Z"
+    },
+    {
+      "id": "msg-b984f081",
+      "role": "assistant",
+      "name": "技术分析师",
+      "content": "学习了。",
+      "timestamp": "2026-04-30T06:43:28.273866Z"
     }
   ],
   "created_at": "2026-04-29T02:58:33.342165Z",
-  "updated_at": "2026-04-29T07:21:58.317072Z"
+  "updated_at": "2026-04-30T06:43:28.274017Z"
 }

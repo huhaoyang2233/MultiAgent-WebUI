@@ -25,7 +25,19 @@ def generate_session_id(user_id: str, target_id: str, target_type: str) -> str:
 @router.get("/", summary="获取用户所有聊天记录")
 async def get_chat_history(current_user: dict = Depends(get_current_user)):
     user_sessions = SessionDatabase.get_user_sessions(current_user["id"])
-    return {"chat_history": user_sessions}
+    chat_history = []
+    for session in user_sessions:
+        session_id = session.get("session_id", "")
+        messages = session.get("messages", [])
+        for msg in messages:
+            chat_history.append({
+                "chat_id": session_id,
+                "role": msg.get("role", ""),
+                "content": msg.get("content", ""),
+                "timestamp": msg.get("timestamp", ""),
+                "name": msg.get("name", "")
+            })
+    return {"chat_history": chat_history}
 
 @router.get("/session/{session_id}", summary="通过session_id获取聊天历史")
 async def get_session_history(session_id: str, current_user: dict = Depends(get_current_user)):

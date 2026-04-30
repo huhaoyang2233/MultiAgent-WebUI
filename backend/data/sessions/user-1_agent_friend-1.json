@@ -2,48 +2,125 @@
   "session_id": "user-1_agent_friend-1",
   "messages": [
     {
-      "id": "msg-8aa17514",
-      "role": "user",
-      "name": "admin",
-      "content": "你好",
-      "timestamp": "2026-04-29T01:46:15.240023Z"
-    },
-    {
-      "id": "msg-283dda74",
-      "role": "assistant",
-      "name": "AI助手",
-      "content": "从技术面来看，创业板 处于上升通道中，短期支撑位在均线附近，建议逢低布局。",
-      "timestamp": "2026-04-29T01:46:15.240790Z"
-    },
-    {
-      "id": "msg-ba71da18",
-      "role": "user",
-      "name": "admin",
-      "content": "在吗",
-      "timestamp": "2026-04-29T02:03:03.746234Z"
-    },
-    {
-      "id": "msg-34ab20d7",
-      "role": "assistant",
-      "name": "AI助手",
-      "content": "从技术面来看，上证指数 处于上升通道中，短期支撑位在均线附近，建议逢低布局。",
-      "timestamp": "2026-04-29T02:03:03.747051Z"
-    },
-    {
-      "id": "msg-561fb01e",
+      "id": "msg-b859a415",
       "role": "user",
       "name": "admin",
       "content": "hi",
-      "timestamp": "2026-04-29T04:43:08.209254Z"
+      "timestamp": "2026-04-30T04:20:45.280164Z"
     },
     {
-      "id": "msg-f1492186",
+      "id": "msg-ff8116a4",
+      "role": "assistant",
+      "name": "AI助手",
+      "content": "根据当前市场情况，深证成指 呈现震荡上行趋势。建议关注成交量变化，若能持续放量可能突破关键压力位。",
+      "timestamp": "2026-04-30T04:20:45.280728Z"
+    },
+    {
+      "id": "msg-16493a2e",
+      "role": "user",
+      "name": "admin",
+      "content": "你好",
+      "timestamp": "2026-04-30T06:07:19.931390Z"
+    },
+    {
+      "id": "msg-f1a6cb2c",
+      "role": "assistant",
+      "name": "AI助手",
+      "content": "根据当前市场情况，深证成指 呈现震荡上行趋势。建议关注成交量变化，若能持续放量可能突破关键压力位。",
+      "timestamp": "2026-04-30T06:07:19.932008Z"
+    },
+    {
+      "id": "msg-4a166a0b",
+      "role": "user",
+      "name": "admin",
+      "content": "你好",
+      "timestamp": "2026-04-30T06:26:18.602284Z"
+    },
+    {
+      "id": "msg-c3a1422f",
+      "role": "assistant",
+      "name": "AI助手",
+      "content": "目前大盘资金面偏紧，需要注意风险。建议控制仓位，等待企稳信号后再加仓。",
+      "timestamp": "2026-04-30T06:26:18.603699Z"
+    },
+    {
+      "id": "msg-bc2ced38",
+      "role": "user",
+      "name": "admin",
+      "content": "米好",
+      "timestamp": "2026-04-30T06:26:34.904926Z"
+    },
+    {
+      "id": "msg-6a42b512",
+      "role": "assistant",
+      "name": "AI助手",
+      "content": "根据当前市场情况，沪深300 呈现震荡上行趋势。建议关注成交量变化，若能持续放量可能突破关键压力位。",
+      "timestamp": "2026-04-30T06:26:34.905623Z"
+    },
+    {
+      "id": "msg-563e1be6",
+      "role": "user",
+      "name": "admin",
+      "content": "你好",
+      "timestamp": "2026-04-30T06:34:44.132176Z"
+    },
+    {
+      "id": "msg-c8965bae",
       "role": "assistant",
       "name": "AI助手",
       "content": "从技术面来看，沪深300 处于上升通道中，短期支撑位在均线附近，建议逢低布局。",
-      "timestamp": "2026-04-29T04:43:08.210582Z"
+      "timestamp": "2026-04-30T06:34:44.132630Z"
+    },
+    {
+      "id": "msg-49b3e74b",
+      "role": "user",
+      "name": "admin",
+      "content": "你好",
+      "timestamp": "2026-04-30T06:34:52.208760Z"
+    },
+    {
+      "id": "msg-60660353",
+      "role": "assistant",
+      "name": "AI助手",
+      "content": "从技术面来看，创业板 处于上升通道中，短期支撑位在均线附近，建议逢低布局。",
+      "timestamp": "2026-04-30T06:34:52.210195Z"
+    },
+    {
+      "id": "msg-59f7ce72",
+      "role": "user",
+      "name": "admin",
+      "content": "你好",
+      "timestamp": "2026-04-30T06:40:03.111957Z"
+    },
+    {
+      "id": "msg-87dd07a3",
+      "role": "assistant",
+      "name": "AI助手",
+      "content": "从技术面来看，上证指数 处于上升通道中，短期支撑位在均线附近，建议逢低布局。",
+      "timestamp": "2026-04-30T06:40:03.112412Z"
+    },
+    {
+      "id": "msg-ecaa4caf",
+      "role": "user",
+      "name": "admin",
+      "content": "zz",
+      "timestamp": "2026-04-30T06:54:04.512302Z"
+    },
+    {
+      "id": "msg-732bb370",
+      "role": "assistant",
+      "name": "市场观察员",
+      "content": "根据当前市场情况，科创板 呈现震荡上行趋势。建议关注成交量变化，若能持续放量可能突破关键压力位。",
+      "timestamp": "2026-04-30T06:54:04.515259Z"
     }
   ],
-  "created_at": "2026-04-28T11:42:33.002663Z",
-  "updated_at": "2026-04-29T04:43:08.210667Z"
+  "created_at": "2026-04-30T04:20:45.274658Z",
+  "updated_at": "2026-04-30T06:54:04.515488Z",
+  "chat_type": "agent",
+  "target_info": {
+    "ai_id": "friend-1",
+    "ai_name": "市场观察员",
+    "ai_type": "ai",
+    "role_id": "role-1"
+  }
 }

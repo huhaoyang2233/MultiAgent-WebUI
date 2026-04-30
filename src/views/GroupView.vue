@@ -534,7 +534,7 @@ import { storeToRefs } from 'pinia'
 import { useChatStore } from '../stores/chatStore'
 import Header from '../components/Header.vue'
 import AgentManager from '../components/AgentManager.vue'
-import { chatWithAgent, chatWithFriend, chatInGroup, checkOrCreateSession, createGroup, getUserSessions, getChatHistory, deleteFriend, addGroupMember, removeGroupMember, deleteGroup } from '../services/chatApi'
+import { chatWithAgent, chatWithFriend, chatInGroup, checkOrCreateSession, createGroup, getUserSessions, getChatMessages, deleteFriend, addGroupMember, removeGroupMember, deleteGroup } from '../services/chatApi'
 
 const chatStore = useChatStore()
 
@@ -976,46 +976,48 @@ const isSessionActive = (session) => {
 
 const selectSession = async (session) => {
   try {
-    const history = await getChatHistory(session.chat_type, session.target_id)
-    
-    if (session.chat_type === 'agent' || session.chat_type === 'friend') {
-      chatStore.selectFriend(session.target_id)
-      if (history.messages && history.messages.length > 0) {
-        const mappedMessages = history.messages.map(msg => ({
+    const sessionId = session.session_id || session.id
+    const chatType = session.chat_type || ""
+    const targetId = session.target_id || ""
+
+    if (!sessionId) {
+      console.error('Invalid session data:', session)
+      return
+    }
+
+    const messages = await getChatMessages(sessionId)
+
+    if (chatType === 'agent' || chatType === 'friend') {
+      chatStore.selectFriend(targetId)
+      if (messages && messages.length > 0) {
+        const mappedMessages = messages.map(msg => ({
           id: msg.id,
           role: msg.role,
           name: msg.name,
           content: msg.content,
           timestamp: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : ''
         }))
-        chatStore.setFriendMessages(session.target_id, mappedMessages)
+        chatStore.setFriendMessages(targetId, mappedMessages)
       } else {
-        chatStore.setFriendMessages(session.target_id, [])
+        chatStore.setFriendMessages(targetId, [])
       }
-    } else if (session.chat_type === 'group') {
-      chatStore.selectGroup(session.target_id)
-      if (history.messages && history.messages.length > 0) {
-        const mappedMessages = history.messages.map(msg => ({
+    } else if (chatType === 'group') {
+      chatStore.selectGroup(targetId)
+      if (messages && messages.length > 0) {
+        const mappedMessages = messages.map(msg => ({
           id: msg.id,
           role: msg.role,
           name: msg.name,
           content: msg.content,
           timestamp: msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : ''
         }))
-        chatStore.setGroupMessages(session.target_id, mappedMessages)
+        chatStore.setGroupMessages(targetId, mappedMessages)
       } else {
-        chatStore.setGroupMessages(session.target_id, [])
+        chatStore.setGroupMessages(targetId, [])
       }
     }
   } catch (error) {
     console.error('加载会话历史失败:', error)
-    if (session.chat_type === 'agent' || session.chat_type === 'friend') {
-      chatStore.selectFriend(session.target_id)
-      chatStore.setFriendMessages(session.target_id, [])
-    } else if (session.chat_type === 'group') {
-      chatStore.selectGroup(session.target_id)
-      chatStore.setGroupMessages(session.target_id, [])
-    }
   }
 }
 
@@ -1109,19 +1111,46 @@ const sendMessage = async () => {
   inputMessage.value = ''
 
   try {
+    const userId = userInfo.value?.id || ''
+    let sessionId = ''
+    
     if (currentFriend.value) {
       const chatType = currentFriend.value.type === 'ai' ? 'agent' : 'friend'
-      await checkOrCreateSession(chatType, currentFriend.value.id)
+      sessionId = `${userId}_${chatType}_${currentFriend.value.id}`
+      const sessionData = {
+        session_id: sessionId,
+        chat_type: chatType,
+        target_id: currentFriend.value.id,
+        target_info: {
+          ai_id: currentFriend.value.id,
+          ai_name: currentFriend.value.name,
+          ai_type: currentFriend.value.type,
+          role_id: currentFriend.value.roleId || ''
+        }
+      }
+      await checkOrCreateSession(sessionData)
     } else if (currentGroup.value) {
-      await checkOrCreateSession('group', currentGroup.value.id)
+      const chatType = 'group'
+      sessionId = `${userId}_${chatType}_${currentGroup.value.id}`
+      const sessionData = {
+        session_id: sessionId,
+        chat_type: chatType,
+        target_id: currentGroup.value.id,
+        target_info: {
+          group_id: currentGroup.value.id,
+          group_name: currentGroup.value.name,
+          members: currentGroup.value.members || []
+        }
+      }
+      await checkOrCreateSession(sessionData)
     }
     
     let replyMessage
     if (currentFriend.value) {
       if (currentFriend.value.type === 'ai') {
-        replyMessage = await chatWithAgent(currentFriend.value.id, message.content)
+        replyMessage = await chatWithAgent(sessionId, message.content)
       } else {
-        replyMessage = await chatWithFriend(currentFriend.value.id, message.content)
+        replyMessage = await chatWithFriend(sessionId, message.content)
       }
       chatStore.addFriendMessage(currentFriend.value.id, {
         id: replyMessage.id,
@@ -1131,7 +1160,7 @@ const sendMessage = async () => {
         timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
       })
     } else if (currentGroup.value) {
-      replyMessage = await chatInGroup(currentGroup.value.id, message.content)
+      replyMessage = await chatInGroup(sessionId, message.content)
       chatStore.addGroupMessage(currentGroup.value.id, {
         id: replyMessage.id,
         role: replyMessage.role,

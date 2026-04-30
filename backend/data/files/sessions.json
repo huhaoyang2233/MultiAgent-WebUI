@@ -1,15 +1,56 @@
 {
   "user-1": [
-    "user-1_agent_friend-1",
-    "user-1_agent_friend-2",
-    "user-1_group_group-1",
-    "user-1_agent_friend-853a1cc6",
-    "user-1_group_group-761f71af",
-    "user-1_agent_friend-1f4867fa"
-  ],
-  "user-2": [
-    "user-2_agent_friend-6",
-    "user-2_group_group-4",
-    "user-2_friend_friend-8"
+    {
+      "session_id": "user-1_agent_friend-1",
+      "chat_type": "agent",
+      "target_id": "friend-1",
+      "target_info": {
+        "ai_id": "friend-1",
+        "ai_name": "市场观察员",
+        "ai_type": "ai",
+        "role_id": "role-1"
+      }
+    },
+    {
+      "session_id": "user-1_group_group-1",
+      "chat_type": "group",
+      "target_id": "group-1",
+      "target_info": {
+        "group_id": "group-1",
+        "group_name": "AI讨论群",
+        "members": [
+          "friend-1",
+          "friend-2",
+          "friend-3",
+          "friend-4",
+          "friend-5"
+        ]
+      }
+    },
+    {
+      "session_id": "user-1_group_group-761f71af",
+      "chat_type": "group",
+      "target_id": "group-761f71af",
+      "target_info": {
+        "group_id": "group-761f71af",
+        "group_name": "hi",
+        "members": [
+          "friend-1",
+          "friend-2",
+          "friend-3"
+        ]
+      }
+    },
+    {
+      "session_id": "user-1_agent_friend-2",
+      "chat_type": "agent",
+      "target_id": "friend-2",
+      "target_info": {
+        "ai_id": "friend-2",
+        "ai_name": "趋势分析师",
+        "ai_type": "ai",
+        "role_id": "role-2"
+      }
+    }
   ]
 }

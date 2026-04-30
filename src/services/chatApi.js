@@ -56,12 +56,12 @@ export const streamChat = async ({ message, role, target_role, chatId }, onChunk
   }
 }
 
-export const chatWithAgent = async (agentId, message) => {
+export const chatWithAgent = async (sessionId, message) => {
   const userInfoStr = localStorage.getItem("userInfo")
   const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
-  
+
   try {
-    const response = await fetch(`${API_CONFIG.baseUrl}/chat/agent/${agentId}`, {
+    const response = await fetch(`${API_CONFIG.baseUrl}/chat/agent/${sessionId}`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({
@@ -90,12 +90,12 @@ export const chatWithAgent = async (agentId, message) => {
   }
 }
 
-export const chatWithFriend = async (friendId, message) => {
+export const chatWithFriend = async (sessionId, message) => {
   const userInfoStr = localStorage.getItem("userInfo")
   const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
-  
+
   try {
-    const response = await fetch(`${API_CONFIG.baseUrl}/chat/friend/${friendId}`, {
+    const response = await fetch(`${API_CONFIG.baseUrl}/chat/friend/${sessionId}`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({
@@ -124,12 +124,12 @@ export const chatWithFriend = async (friendId, message) => {
   }
 }
 
-export const chatInGroup = async (groupId, message) => {
+export const chatInGroup = async (sessionId, message) => {
   const userInfoStr = localStorage.getItem("userInfo")
   const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null
-  
+
   try {
-    const response = await fetch(`${API_CONFIG.baseUrl}/chat/group/${groupId}`, {
+    const response = await fetch(`${API_CONFIG.baseUrl}/chat/group/${sessionId}`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({
@@ -158,11 +158,12 @@ export const chatInGroup = async (groupId, message) => {
   }
 }
 
-export const checkOrCreateSession = async (chatType, targetId) => {
+export const checkOrCreateSession = async (sessionData) => {
   try {
-    const response = await fetch(`${API_CONFIG.baseUrl}/chat/session/${chatType}/${targetId}`, {
-      method: 'GET',
+    const response = await fetch(`${API_CONFIG.baseUrl}/chat/session`, {
+      method: 'POST',
       headers: getHeaders(),
+      body: JSON.stringify(sessionData),
     })
 
     if (!response.ok) {
@@ -195,24 +196,6 @@ export const createGroup = async (name, avatar, members) => {
     return await response.json()
   } catch (error) {
     console.error('创建群聊失败:', error)
-    throw error
-  }
-}
-
-export const getChatHistory = async (chatType, targetId) => {
-  try {
-    const response = await fetch(`${API_CONFIG.baseUrl}/chat/history/${chatType}/${targetId}`, {
-      method: 'GET',
-      headers: getHeaders(),
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error('获取聊天历史失败:', error)
     throw error
   }
 }
@@ -596,9 +579,9 @@ export const sendMessage = async (targetId, targetType, message) => {
   }
 }
 
-export const getChatMessages = async (targetId, targetType) => {
+export const getChatMessages = async (sessionId) => {
   try {
-    const response = await fetch(`${API_CONFIG.baseUrl}/chat-history/${targetId}/${targetType}`, {
+    const response = await fetch(`${API_CONFIG.baseUrl}/chat-history/session/${sessionId}`, {
       headers: getHeaders()
     })
     if (!response.ok) {

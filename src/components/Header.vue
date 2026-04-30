@@ -10,13 +10,6 @@
     <div class="header-center">
       <div class="mode-switch">
         <button 
-          :class="['mode-btn', { active: currentMode === 'chatflow' }]"
-          @click="switchMode('chatflow')"
-        >
-          <span class="btn-icon">💬</span>
-          <span class="btn-text">{{ isEnglish ? 'Chat Mode' : '对话模式' }}</span>
-        </button>
-        <button 
           :class="['mode-btn', { active: currentMode === 'group' }]"
           @click="switchMode('group')"
         >

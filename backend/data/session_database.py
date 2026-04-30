@@ -16,15 +16,20 @@ class SessionDatabase:
         return os.path.exists(SessionDatabase.get_session_filepath(session_id))
 
     @staticmethod
-    def create_session(session_id: str):
+    def create_session(session_id: str, chat_type: str = "", target_info: dict = None):
         if not SessionDatabase.session_exists(session_id):
             from datetime import datetime
             data = {
                 "session_id": session_id,
                 "messages": [],
                 "created_at": datetime.utcnow().isoformat() + "Z",
-                "updated_at": datetime.utcnow().isoformat() + "Z"
+                "updated_at": datetime.utcnow().isoformat() + "Z",
+                "chat_type": chat_type,
             }
+
+            if target_info:
+                data["target_info"] = target_info
+
             SessionDatabase.save_session(session_id, data)
 
     @staticmethod

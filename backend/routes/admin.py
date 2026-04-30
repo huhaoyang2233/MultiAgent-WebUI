@@ -116,22 +116,37 @@ async def delete_user(user_id: str, current_user: dict = Depends(get_current_use
 async def get_all_sessions(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Permission denied")
-    
+
     sessions_db = JSONDatabase("sessions")
     all_sessions = sessions_db.get_all()
-    
+
     result = {}
     sessions_dir = os.path.join(os.path.dirname(__file__), "..", "data", "sessions")
-    
-    for user_id, session_ids in all_sessions.items():
+
+    for user_id, session_list in all_sessions.items():
         if user_id == "_meta":
             continue
-        
+
         user_sessions = []
-        for session_id in session_ids:
+        for session_item in session_list:
+            if isinstance(session_item, dict):
+                session_id = session_item.get("session_id", "")
+                chat_type = session_item.get("chat_type", "")
+                target_info = session_item.get("target_info", {})
+            else:
+                session_id = session_item
+                chat_type = "unknown"
+                if session_id.startswith(f"{user_id}_agent_"):
+                    chat_type = "agent"
+                elif session_id.startswith(f"{user_id}_friend_"):
+                    chat_type = "friend"
+                elif session_id.startswith(f"{user_id}_group_"):
+                    chat_type = "group"
+                target_info = {}
+
             session_file = os.path.join(sessions_dir, f"{session_id}.json")
             message_count = 0
-            
+
             if os.path.exists(session_file):
                 import json
                 with open(session_file, "r") as f:
@@ -140,51 +155,52 @@ async def get_all_sessions(current_user: dict = Depends(get_current_user)):
                         message_count = len(data.get("messages", []))
                     except:
                         pass
-            
-            chat_type = "unknown"
-            if session_id.startswith(f"{user_id}_agent_"):
-                chat_type = "agent"
-            elif session_id.startswith(f"{user_id}_friend_"):
-                chat_type = "friend"
-            elif session_id.startswith(f"{user_id}_group_"):
-                chat_type = "group"
-            
+
             user_sessions.append({
                 "session_id": session_id,
                 "chat_type": chat_type,
+                "target_info": target_info,
                 "message_count": message_count
             })
-        
+
         result[user_id] = user_sessions
-    
+
     return result
 
 @router.delete("/sessions/{session_id}", summary="删除会话")
 async def delete_session(session_id: str, current_user: dict = Depends(get_current_user)):
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Permission denied")
-    
+
     sessions_db = JSONDatabase("sessions")
     all_sessions = sessions_db.get_all()
-    
+
     user_id = None
-    for uid, session_ids in all_sessions.items():
-        if session_id in session_ids:
-            user_id = uid
+    for uid, session_list in all_sessions.items():
+        for s in session_list:
+            session_id_to_check = s if isinstance(s, str) else s.get("session_id", "")
+            if session_id_to_check == session_id:
+                user_id = uid
+                break
+        if user_id:
             break
-    
+
     if user_id is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     user_sessions = all_sessions[user_id]
-    user_sessions.remove(session_id)
-    sessions_db.set(user_id, user_sessions)
-    
+    new_sessions = []
+    for s in user_sessions:
+        session_id_to_check = s if isinstance(s, str) else s.get("session_id", "")
+        if session_id_to_check != session_id:
+            new_sessions.append(s)
+    sessions_db.set(user_id, new_sessions)
+
     sessions_dir = os.path.join(os.path.dirname(__file__), "..", "data", "sessions")
     session_file = os.path.join(sessions_dir, f"{session_id}.json")
     if os.path.exists(session_file):
         os.remove(session_file)
-    
+
     return {"message": "Session deleted successfully"}
 
 @router.get("/users/{user_id}/friends", summary="获取指定用户的好友列表")

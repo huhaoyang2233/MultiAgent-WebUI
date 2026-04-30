@@ -97,31 +97,79 @@ def get_group_name(group_id: str, user_id: str) -> str:
 def save_chat_message(session_id: str, message: dict):
     SessionDatabase.add_message(session_id, message)
 
-def ensure_session(session_id: str, user_id: str):
-    if not SessionDatabase.session_exists(session_id):
-        SessionDatabase.create_session(session_id)
-        
-        user_sessions = sessions_db.get(user_id, [])
-        if session_id not in user_sessions:
-            user_sessions.append(session_id)
-            sessions_db.set(user_id, user_sessions)
+def ensure_session(session_id: str, user_id: str, chat_type: str = "", target_info: dict = None):
+    session_file_exists = SessionDatabase.session_exists(session_id)
 
-@router.get("/session/{chat_type}/{target_id}", summary="检查或创建会话")
-async def check_or_create_session(chat_type: str, target_id: str, current_user: dict = Depends(get_current_user)):
-    session_id = f"{current_user['id']}_{chat_type}_{target_id}"
-    
+    if not session_file_exists:
+        SessionDatabase.create_session(session_id, chat_type, target_info)
+
+    target_id = ""
+    if target_info:
+        target_id = target_info.get("ai_id") or target_info.get("group_id") or ""
+
+    session_data = {
+        "session_id": session_id,
+        "chat_type": chat_type,
+        "target_id": target_id,
+        "target_info": target_info or {}
+    }
+
+    user_sessions = sessions_db.get(user_id, [])
+    session_found = False
+    for i, s in enumerate(user_sessions):
+        s_id = s if isinstance(s, str) else s.get("session_id", "")
+        if s_id == session_id:
+            user_sessions[i] = session_data
+            session_found = True
+            break
+
+    if not session_found:
+        user_sessions.append(session_data)
+    sessions_db.set(user_id, user_sessions)
+
+class SessionRequest(BaseModel):
+    session_id: str
+    chat_type: str
+    target_id: str
+    target_info: dict = {}
+
+@router.post("/session", summary="检查或创建会话")
+async def check_or_create_session(request: SessionRequest, current_user: dict = Depends(get_current_user)):
+    session_id = request.session_id
+    chat_type = request.chat_type
+    target_id = request.target_id
+    target_info = request.target_info
+
     session_exists = SessionDatabase.session_exists(session_id)
-    
+
     if not session_exists:
-        SessionDatabase.create_session(session_id)
-        
-        user_sessions = sessions_db.get(current_user["id"], [])
-        if session_id not in user_sessions:
-            user_sessions.append(session_id)
-            sessions_db.set(current_user["id"], user_sessions)
-    
+        SessionDatabase.create_session(session_id, chat_type, target_info)
+
+    session_data = {
+        "session_id": session_id,
+        "chat_type": chat_type,
+        "target_id": target_id,
+        "target_info": target_info
+    }
+
+    user_sessions = sessions_db.get(current_user["id"], [])
+    session_found = False
+    for i, s in enumerate(user_sessions):
+        s_id = s if isinstance(s, str) else s.get("session_id", "")
+        if s_id == session_id:
+            user_sessions[i] = session_data
+            session_found = True
+            break
+
+    if not session_found:
+        user_sessions.append(session_data)
+    sessions_db.set(current_user["id"], user_sessions)
+
     return {
         "session_id": session_id,
+        "chat_type": chat_type,
+        "target_id": target_id,
+        "target_info": target_info,
         "created": not session_exists,
         "exists": session_exists
     }
@@ -130,44 +178,60 @@ async def check_or_create_session(chat_type: str, target_id: str, current_user: 
 async def get_user_sessions(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
     sessions = sessions_db.get(user_id, [])
-    
+
     session_list = []
-    for session_id in sessions:
-        parts = session_id.split("_")
-        if len(parts) >= 3:
-            chat_type = parts[1]
-            target_id = "_".join(parts[2:])
-            
-            session_data = SessionDatabase.load_session(session_id)
-            messages = session_data.get("messages", [])
-            last_message = messages[-1]["content"] if messages else ""
-            
-            session_info = {
-                "session_id": session_id,
-                "chat_type": chat_type,
-                "target_id": target_id,
-                "message_count": len(messages),
-                "last_message": last_message[:50] + "..." if len(last_message) > 50 else last_message,
-                "created_at": session_data.get("created_at", ""),
-                "updated_at": session_data.get("updated_at", "")
-            }
-            
-            session_list.append(session_info)
-    
+    for session_item in sessions:
+        if isinstance(session_item, dict):
+            session_id = session_item.get("session_id", "")
+            chat_type = session_item.get("chat_type", "")
+            target_info = session_item.get("target_info", {})
+        else:
+            session_id = session_item
+            parts = session_id.split("_")
+            if len(parts) >= 3:
+                chat_type = parts[1]
+            else:
+                continue
+            target_info = {}
+
+        session_data = SessionDatabase.load_session(session_id)
+        messages = session_data.get("messages", [])
+        last_message = messages[-1]["content"] if messages else ""
+
+        target_id = target_info.get("ai_id") or target_info.get("group_id") or ""
+
+        session_info = {
+            "session_id": session_id,
+            "chat_type": chat_type,
+            "target_id": target_id,
+            "target_info": target_info,
+            "message_count": len(messages),
+            "last_message": last_message[:50] + "..." if len(last_message) > 50 else last_message,
+            "created_at": session_data.get("created_at", ""),
+            "updated_at": session_data.get("updated_at", "")
+        }
+
+        session_list.append(session_info)
+
     return {"sessions": session_list}
 
 @router.delete("/session/{session_id}", summary="删除会话")
 async def delete_session(session_id: str, current_user: dict = Depends(get_current_user)):
     if not session_id.startswith(current_user["id"]):
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     SessionDatabase.delete_session(session_id)
-    
+
     user_sessions = sessions_db.get(current_user["id"], [])
-    if session_id in user_sessions:
-        user_sessions.remove(session_id)
-        sessions_db.set(current_user["id"], user_sessions)
-    
+    new_sessions = []
+    for s in user_sessions:
+        if isinstance(s, dict):
+            if s.get("session_id") != session_id:
+                new_sessions.append(s)
+        elif s != session_id:
+            new_sessions.append(s)
+    sessions_db.set(current_user["id"], new_sessions)
+
     return {"message": "Session deleted successfully"}
 
 @router.post("/", summary="通用聊天接口")
@@ -220,21 +284,38 @@ def get_random_group_speaker(group_member_ids: list, user_id: str, exclude_membe
     random_member_id = random.choice(valid_members)
     return get_group_member_name(random_member_id, user_id)
 
-@router.post("/group/{group_id}", summary="群聊")
-async def chat_group(group_id: str, request: ChatRequest, current_user: dict = Depends(get_current_user)):
+@router.post("/group/{session_id}", summary="群聊")
+async def chat_group(session_id: str, request: ChatRequest, current_user: dict = Depends(get_current_user)):
     user_id = request.user_config.get("user_ID", current_user["id"])
     query = request.user_message.get("query", "")
 
-    session_id = f"{current_user['id']}_group_{group_id}"
-    
-    ensure_session(session_id, current_user["id"])
+    # 从 sessions.json 中查找 session 信息
+    user_sessions = sessions_db.get(current_user["id"], [])
+    session_data = None
+    for s in user_sessions:
+        s_id = s if isinstance(s, str) else s.get("session_id", "")
+        if s_id == session_id:
+            session_data = s if isinstance(s, dict) else {"session_id": s}
+            break
 
+    if not session_data:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    target_info = session_data.get("target_info", {})
+    group_id = target_info.get("group_id", "")
+
+    if not group_id:
+        raise HTTPException(status_code=400, detail="Invalid session: missing group_id")
+
+    # 从 groups_db 获取群成员信息
     groups = groups_db.get(current_user["id"], [])
     group_member_ids = []
     for group in groups:
         if group.get("id") == group_id:
             group_member_ids = group.get("members", [])
             break
+
+    ensure_session(session_id, current_user["id"], "group", target_info)
 
     user_name = current_user["username"]
     if group_member_ids and current_user["id"] in group_member_ids:
@@ -266,14 +347,31 @@ async def chat_group(group_id: str, request: ChatRequest, current_user: dict = D
 
     return ai_msg
 
-@router.post("/agent/{agent_id}", summary="与智能体聊天")
-async def chat_agent(agent_id: str, request: ChatRequest, current_user: dict = Depends(get_current_user)):
+@router.post("/agent/{session_id}", summary="与智能体聊天")
+async def chat_agent(session_id: str, request: ChatRequest, current_user: dict = Depends(get_current_user)):
     user_id = request.user_config.get("user_ID", current_user["id"])
     query = request.user_message.get("query", "")
 
-    session_id = f"{current_user['id']}_agent_{agent_id}"
-    
-    ensure_session(session_id, current_user["id"])
+    # 从 sessions.json 中查找 session 信息
+    user_sessions = sessions_db.get(current_user["id"], [])
+    session_data = None
+    for s in user_sessions:
+        s_id = s if isinstance(s, str) else s.get("session_id", "")
+        if s_id == session_id:
+            session_data = s if isinstance(s, dict) else {"session_id": s}
+            break
+
+    if not session_data:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    target_info = session_data.get("target_info", {})
+    agent_id = target_info.get("ai_id", "")
+    agent_name= target_info.get("ai_name", "")
+
+    if not agent_id:
+        raise HTTPException(status_code=400, detail="Invalid session: missing agent_id")
+
+    ensure_session(session_id, current_user["id"], "agent", target_info)
 
     user_msg = {
         "id": f"msg-{uuid.uuid4().hex[:8]}",
@@ -288,8 +386,8 @@ async def chat_agent(agent_id: str, request: ChatRequest, current_user: dict = D
 
     ai_msg = {
         "id": f"msg-{uuid.uuid4().hex[:8]}",
-        "role": ai_response["role"],
-        "name": ai_response["name"],
+        "role": "assistant",
+        "name": agent_name,
         "content": ai_response["content"],
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
@@ -297,14 +395,31 @@ async def chat_agent(agent_id: str, request: ChatRequest, current_user: dict = D
 
     return ai_msg
 
-@router.post("/friend/{friend_id}", summary="与用户聊天")
-async def chat_friend(friend_id: str, request: ChatRequest, current_user: dict = Depends(get_current_user)):
+@router.post("/friend/{session_id}", summary="与用户聊天")
+async def chat_friend(session_id: str, request: ChatRequest, current_user: dict = Depends(get_current_user)):
     user_id = request.user_config.get("user_ID", current_user["id"])
     query = request.user_message.get("query", "")
 
-    session_id = f"{current_user['id']}_friend_{friend_id}"
-    
-    ensure_session(session_id, current_user["id"])
+    # 从 sessions.json 中查找 session 信息
+    user_sessions = sessions_db.get(current_user["id"], [])
+    session_data = None
+    for s in user_sessions:
+        s_id = s if isinstance(s, str) else s.get("session_id", "")
+        if s_id == session_id:
+            session_data = s if isinstance(s, dict) else {"session_id": s}
+            break
+
+    if not session_data:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    target_info = session_data.get("target_info", {})
+    friend_id = target_info.get("ai_id", "")
+    friend_name = target_info.get("ai_name", "")
+
+    if not friend_id:
+        raise HTTPException(status_code=400, detail="Invalid session: missing friend_id")
+
+    ensure_session(session_id, current_user["id"], "friend", target_info)
 
     user_msg = {
         "id": f"msg-{uuid.uuid4().hex[:8]}",
@@ -321,7 +436,7 @@ async def chat_friend(friend_id: str, request: ChatRequest, current_user: dict =
     ai_msg = {
         "id": f"msg-{uuid.uuid4().hex[:8]}",
         "role": "assistant",
-        "name": get_friend_name(friend_id, current_user["id"]),
+        "name": friend_name or get_friend_name(friend_id, current_user["id"]),
         "content": response_content,
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
